@@ -1,3 +1,4 @@
+// src/pages/IndustrySelect.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -21,18 +22,26 @@ const industries = [
 export default function IndustrySelect() {
   const { user, fetchProfile } = useAuth();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState([]);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
 
+  const toggle = (id) => {
+    setError("");
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   async function handleContinue() {
-    if (!selected) { setError("Please select your industry to continue."); return; }
+    if (selected.length === 0) { setError("Please select at least one industry to continue."); return; }
     setSaving(true); setError("");
     try {
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
-        industry: selected,
+        industry: selected[0],        // primary — backward compat
+        industries: selected,          // new multi array
         onboardingComplete: true,
         createdAt: serverTimestamp(),
       }, { merge: true });
@@ -49,12 +58,12 @@ export default function IndustrySelect() {
     <div style={S.page}>
       <div style={S.inner}>
 
-        {/* Navy header — compact */}
+        {/* Navy header */}
         <div style={S.header}>
           <img src="/icon-512.png" alt="ConnektIn" style={S.logoImg} />
           <span style={S.step}>STEP 1 OF 3</span>
-          <h1 style={S.title}>Your industry</h1>
-          <p style={S.subtitle}>Personalises your feed, articles and job listings</p>
+          <h1 style={S.title}>Your industries</h1>
+          <p style={S.subtitle}>Pick one or more — personalises your feed, articles and jobs</p>
           <div style={S.progressWrap}>
             <div style={S.progressFill} />
           </div>
@@ -64,14 +73,22 @@ export default function IndustrySelect() {
         <div style={S.cardWrap}>
           <div style={S.card}>
 
-            {/* 3-col compact grid — fits all 11 without scrolling */}
+            {/* Selected count */}
+            {selected.length > 0 && (
+              <div style={S.selectedBar}>
+                <span style={S.selectedCount}>{selected.length} selected</span>
+                <button style={S.clearBtn} onClick={() => setSelected([])}>Clear all</button>
+              </div>
+            )}
+
+            {/* 3-col grid */}
             <div style={S.grid}>
               {industries.map(ind => {
-                const isSel = selected === ind.id;
+                const isSel = selected.includes(ind.id);
                 return (
                   <button
                     key={ind.id}
-                    onClick={() => { setSelected(ind.id); setError(""); }}
+                    onClick={() => toggle(ind.id)}
                     style={{
                       ...S.chip,
                       background:  isSel ? "#E6FAF8" : "#F9FAFB",
@@ -92,18 +109,18 @@ export default function IndustrySelect() {
 
             <button
               onClick={handleContinue}
-              disabled={saving || !selected}
+              disabled={saving || selected.length === 0}
               style={{
                 ...S.cta,
-                background: selected ? "#0A1628" : "#E4E2DC",
-                color:      selected ? "#fff"    : "#9CA3AF",
-                cursor:     selected ? "pointer" : "not-allowed",
+                background: selected.length > 0 ? "#0A1628" : "#E4E2DC",
+                color:      selected.length > 0 ? "#fff"    : "#9CA3AF",
+                cursor:     selected.length > 0 ? "pointer" : "not-allowed",
               }}
             >
-              {saving ? "Saving..." : "Continue →"}
+              {saving ? "Saving..." : `Continue → ${selected.length > 0 ? `(${selected.length} selected)` : ""}`}
             </button>
 
-            <p style={S.hint}>You can switch industries once every 90 days</p>
+            <p style={S.hint}>You can update your industries anytime from Settings</p>
           </div>
         </div>
 
@@ -124,7 +141,9 @@ const S = {
   progressFill: { width: "33%", height: "100%", background: "#0D9488", borderRadius: 2 },
   cardWrap:     { padding: "0 14px 24px", marginTop: -16, width: "100%", boxSizing: "border-box" },
   card:         { background: "#fff", borderRadius: 14, padding: "16px 12px", border: "0.5px solid #E4E2DC", boxShadow: "0 2px 16px rgba(0,0,0,0.08)" },
-  // 3-col grid — fits all without scrolling
+  selectedBar:  { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, padding: "6px 4px" },
+  selectedCount:{ fontSize: 12, fontWeight: 700, color: "#0D9488" },
+  clearBtn:     { background: "none", border: "none", fontSize: 12, color: "#9CA3AF", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   grid:         { display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", gap: 7, marginBottom: 14 },
   chip:         { display: "flex", flexDirection: "column", alignItems: "center", padding: "10px 6px", borderRadius: 10, border: "1.5px solid", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", position: "relative", gap: 3 },
   chipEmoji:    { fontSize: 18, lineHeight: 1 },
