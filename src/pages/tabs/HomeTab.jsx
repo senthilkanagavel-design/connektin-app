@@ -1,6 +1,6 @@
 // src/pages/tabs/HomeTab.jsx
 import { useState, useEffect } from "react";
-import { collection, query, where, limit, onSnapshot, getDocs, doc, updateDoc, arrayUnion, arrayRemove, increment, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, limit, onSnapshot, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase/config";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,12 @@ const INDUSTRY_LABELS = {
   hospitality_travel:     "Hospitality & Travel",
 };
 
+const PLAN_BADGE = {
+  thermite: { label: "TherMite", bg: "#E6FAF8", color: "#0F6E56", border: "#99F6E4" },
+  regular:  { label: "Regular",  bg: "#E8EAF0", color: "#0A1628", border: "#C8CAD4" },
+  recruiter:{ label: "Recruiter",bg: "#F5F3FF", color: "#7C3AED", border: "#C4B5FD" },
+};
+
 const timeAgo = (ts) => {
   if (!ts) return "";
   const d = ts?.toDate ? ts.toDate() : new Date(ts);
@@ -59,6 +65,66 @@ function SkeletonCard() {
   );
 }
 
+// ── Likes Sheet ───────────────────────────────────────────────────────────────
+function LikesSheet({ likedBy = [], onClose, onUserTap }) {
+  const [likers, setLikers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!likedBy.length) { setLoading(false); return; }
+    Promise.all(likedBy.map(uid => getDoc(doc(db, "users", uid)))).then(snaps => {
+      setLikers(snaps.filter(s => s.exists()).map(s => ({ uid: s.id, ...s.data() })));
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 800 }} />
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderRadius: "20px 20px 0 0", zIndex: 801, maxHeight: "60vh", display: "flex", flexDirection: "column", fontFamily: "DM Sans, sans-serif" }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+          <div style={{ width: 36, height: 3, borderRadius: 2, background: "#E4E2DC" }} />
+        </div>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 12px", borderBottom: "1px solid #F0EFEA" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#0A1628" }}>👍 {likedBy.length} {likedBy.length === 1 ? "Like" : "Likes"}</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9CA3AF", fontSize: 18, cursor: "pointer" }}>✕</button>
+        </div>
+        {/* List */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "8px 0 24px" }}>
+          {loading ? (
+            <div style={{ padding: "20px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>Loading...</div>
+          ) : likers.length === 0 ? (
+            <div style={{ padding: "20px", textAlign: "center", color: "#9CA3AF", fontSize: 13 }}>No data found.</div>
+          ) : likers.map(u => {
+            const badge = PLAN_BADGE[u.plan];
+            const industry = u.industry ? u.industry.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "";
+            return (
+              <div
+                key={u.uid}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", cursor: "pointer" }}
+                onClick={() => { onClose(); onUserTap(u.uid); }}
+              >
+                <Avatar uid={u.uid} photoURL={u.photoURL} avatarId={u.avatarId || u.avatar} displayName={u.displayName} plan={u.plan || "trial"} role={u.role || "participant"} size={42} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0A1628" }}>{u.displayName || "ConnektIn User"}</div>
+                  {industry && <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{industry}</div>}
+                </div>
+                {badge && (
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, flexShrink: 0 }}>
+                    {badge.label}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function PostCard({ item, currentUser, profile }) {
   const isOwn      = item.uid === currentUser?.uid;
   const liked      = item.likedBy?.includes(currentUser?.uid);
@@ -69,8 +135,9 @@ function PostCard({ item, currentUser, profile }) {
   const [posting, setPosting]           = useState(false);
   const [liking, setLiking]             = useState(false);
   const [miniCardUid, setMiniCardUid]   = useState(null);
-  // ── NEW ──────────────────────────────────────────────────────
   const [showImageView, setShowImageView] = useState(false);
+  // ── NEW ──────────────────────────────────────────────────────
+  const [showLikes, setShowLikes] = useState(false);
   // ─────────────────────────────────────────────────────────────
   const navigate = useNavigate();
 
@@ -164,7 +231,6 @@ function PostCard({ item, currentUser, profile }) {
           </div>
         )}
 
-        {/* ── NEW: tap image to open fullscreen ── */}
         {item.image && (
           <img
             src={item.image}
@@ -173,12 +239,20 @@ function PostCard({ item, currentUser, profile }) {
             onClick={() => setShowImageView(true)}
           />
         )}
-        {/* ─────────────────────────────────────── */}
 
         {/* Like / comment counts */}
         {(likeCount > 0 || commentCount > 0) && (
           <div style={S.countsRow}>
-            {likeCount > 0 && <span style={S.countText}>👍 {likeCount}</span>}
+            {/* ── NEW: tap like count to see who liked ── */}
+            {likeCount > 0 && (
+              <span
+                style={{ ...S.countText, cursor: "pointer" }}
+                onClick={() => setShowLikes(true)}
+              >
+                👍 {likeCount}
+              </span>
+            )}
+            {/* ─────────────────────────────────────────── */}
             {commentCount > 0 && (
               <span style={{ ...S.countText, marginLeft: "auto", cursor: "pointer" }} onClick={() => setShowComments(v => !v)}>
                 {commentCount} comment{commentCount > 1 ? "s" : ""}
@@ -272,14 +346,19 @@ function PostCard({ item, currentUser, profile }) {
 
       {miniCardUid && <MiniProfileCard uid={miniCardUid} onClose={() => setMiniCardUid(null)} />}
 
-      {/* ── NEW: Full-view post image modal ── */}
       {showImageView && item.image && (
-        <PostImageFullView
-          src={item.image}
-          onClose={() => setShowImageView(false)}
+        <PostImageFullView src={item.image} onClose={() => setShowImageView(false)} />
+      )}
+
+      {/* ── NEW: Likes sheet ── */}
+      {showLikes && (
+        <LikesSheet
+          likedBy={item.likedBy || []}
+          onClose={() => setShowLikes(false)}
+          onUserTap={(uid) => setMiniCardUid(uid)}
         />
       )}
-      {/* ─────────────────────────────────── */}
+      {/* ───────────────────── */}
     </>
   );
 }
