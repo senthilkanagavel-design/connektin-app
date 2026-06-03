@@ -4,10 +4,11 @@ import { addSignal, SIGNAL_POINTS, getSignalBar } from '../../utils/signal';
 import { useSignalRank } from '../../hooks/useSignalRank';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, increment, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, increment, addDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../components/Avatar';
 import ProfilePhotoSheet from '../../components/ProfilePhotoSheet';
+import AvatarFullView from '../../components/AvatarFullView';
 
 export default function ProfileTab({ userData, isTrial, onUpgrade }) {
   const navigate = useNavigate();
@@ -15,10 +16,16 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [localData, setLocalData] = useState(null);
   const [liveData, setLiveData] = useState(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  // ── NEW ──────────────────────────────────────────────────────────────────
+  const [showFullView, setShowFullView] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const profile     = { ...userData, ...liveData, ...localData };
   const displayName = profile?.displayName || 'User';
   const email       = profile?.email || '';
+  // Support both old single industry and new industries array
+  const myIndustries = profile?.industries || (profile?.industry ? [profile.industry] : []);
   const industry    = profile?.industry
     ? profile.industry.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : '—';
@@ -28,6 +35,7 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
   const totalRead   = Object.values(profile?.readCounts || {}).reduce((a, b) => a + b, 0);
   const isAdmin     = role === 'admin';
   const isLocked    = plan === 'trial' && profile?.userType !== 'recruiter';
+  const isPaid      = plan === 'thermite' || plan === 'regular';
 
   const circleCount    = profile?.circleCount    || 0;
   const circlingCount  = profile?.circlingCount  || 0;
@@ -48,6 +56,20 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
     });
     return () => unsub();
   }, [profile?.uid]);
+
+  useEffect(() => {
+    if (!profile?.uid || !isPaid) return;
+    const q = query(
+      collection(db, 'conversations'),
+      where('participants', 'array-contains', profile.uid)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      let total = 0;
+      snap.docs.forEach(d => { total += d.data()[`unreadCount_${profile.uid}`] || 0; });
+      setUnreadMessages(total);
+    });
+    return () => unsub();
+  }, [profile?.uid, isPaid]);
 
   const planConfig = {
     trial:    { label: 'Free Trial',    color: '#92400E', bg: '#FEF3C7', border: '#FCD34D', dot: '#F59E0B' },
@@ -117,19 +139,36 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
       <div style={s.heroCard}>
         <div style={s.avatarWrap}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
-            <Avatar
-              uid={profile?.uid} photoURL={profile?.photoURL}
-              avatarId={profile?.avatarId || profile?.avatar}
-              displayName={displayName} plan={plan} role={role}
-              readCount={totalRead} size={84}
-              onCamera={() => setSheetOpen(true)}
-            />
+            {/* ── NEW: tap avatar to open full view if real photo exists ── */}
+            <div
+              onClick={() => { if (profile?.photoURL) setShowFullView(true); }}
+              style={{ cursor: profile?.photoURL ? 'zoom-in' : 'default' }}
+            >
+              <Avatar
+                uid={profile?.uid} photoURL={profile?.photoURL}
+                avatarId={profile?.avatarId || profile?.avatar}
+                displayName={displayName} plan={plan} role={role}
+                readCount={totalRead} size={84}
+                onCamera={() => setSheetOpen(true)}
+              />
+            </div>
+            {/* ─────────────────────────────────────────────────────────── */}
           </div>
         </div>
 
         <div style={s.heroBody}>
           <h2 style={s.name}>{displayName}</h2>
-          <p style={s.industry}>{industry}</p>
+          {/* ── Industry pills ── */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, justifyContent: 'center', marginBottom: 8 }}>
+            {myIndustries.length > 0 ? myIndustries.map(ind => (
+              <span key={ind} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: '#E6FAF8', color: '#0F6E56', border: '1px solid #99F6E4', fontFamily: 'DM Sans, sans-serif' }}>
+                {ind.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              </span>
+            )) : (
+              <span style={{ fontSize: 13, color: '#64748B', fontFamily: 'DM Sans, sans-serif' }}>{industry}</span>
+            )}
+          </div>
+          {/* ─────────────────── */}
           {bio ? <p style={s.bio}>{bio}</p> : null}
           <div style={s.planRow}>
             <span style={{ ...s.planBadge, backgroundColor: planConfig.bg, color: planConfig.color, border: `1px solid ${planConfig.border}` }}>
@@ -139,7 +178,7 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
           </div>
         </div>
 
-        {/* Signal Card — dark navy, bars + rank only, no WoF link */}
+        {/* Signal Card */}
         <div style={s.signalCard}>
           <div style={s.signalLeft}>
             <div style={s.signalLabel}>Your Signal</div>
@@ -189,7 +228,7 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
         </div>
       </div>
 
-      {/* Wall of Fame — white hero card with teal left border */}
+      {/* Wall of Fame */}
       <div style={s.wofCard} onClick={() => navigate('/wall-of-fame', { state: { from: 'profile' } })}>
         <div>
           <div style={s.wofMeta}>Community</div>
@@ -263,6 +302,35 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
       {/* Activity */}
       <div style={s.section}>
         <SectionHeader title="Activity" icon="📊" />
+
+        {isPaid ? (
+          <div
+            style={{ ...ar.row, borderBottom: '1px solid #F3F2EF', cursor: 'pointer', background: unreadMessages > 0 ? '#F0FDF9' : 'transparent' }}
+            onClick={() => navigate('/messages')}
+          >
+            <div style={{ ...ar.iconWrap, background: '#EEF9F7' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span style={ar.label}>Messages</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {unreadMessages > 0 && (
+                <span style={{ background: '#0D9488', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, fontFamily: 'DM Sans, sans-serif' }}>
+                  {unreadMessages}
+                </span>
+              )}
+              <ChevronIcon />
+            </div>
+          </div>
+        ) : (
+          <div style={{ ...ar.row, borderBottom: '1px solid #F3F2EF', opacity: 0.6 }}>
+            <div style={{ ...ar.iconWrap, background: '#F3F2EF' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <span style={ar.label}>Messages</span>
+            <button style={mr.lockBtn} onClick={onUpgrade}>🔒 Upgrade</button>
+          </div>
+        )}
+
         <ActivityRow icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>} iconBg="#EEF9F7" label="Profile Views" value={profileViews} />
         <ActivityRow icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4F6BED" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>} iconBg="#EEF3FF" label="Jobs Viewed" value={jobsViewed} />
         <ActivityRow icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>} iconBg="#FFF8EE" label="Articles Read" value={totalRead} last />
@@ -286,6 +354,16 @@ export default function ProfileTab({ userData, isTrial, onUpgrade }) {
           Privacy Policy
         </span>
       </div>
+
+      {/* ── NEW: Full-view photo modal ──────────────────────────────────────── */}
+      {showFullView && profile?.photoURL && (
+        <AvatarFullView
+          src={profile.photoURL}
+          name={displayName}
+          onClose={() => setShowFullView(false)}
+        />
+      )}
+      {/* ───────────────────────────────────────────────────────────────────── */}
     </div>
   );
 }
@@ -429,7 +507,6 @@ const s = {
   topBarActions:{ display: 'flex', gap: 8 },
   topBarBtn:    { display: 'flex', alignItems: 'center', padding: '6px 12px', borderRadius: 8, border: '1px solid #E4E2DC', background: '#F8F8F8', fontSize: 12, fontWeight: 500, color: '#374151', fontFamily: 'DM Sans, sans-serif', cursor: 'pointer' },
   topBarLogout: { display: 'flex', alignItems: 'center', padding: '6px 12px', borderRadius: 8, border: '1px solid #FECACA', background: '#FFF5F5', fontSize: 12, fontWeight: 500, color: '#DC2626', fontFamily: 'DM Sans, sans-serif', cursor: 'pointer' },
-
   heroBand:     { height: 72, background: '#0A1628', flexShrink: 0 },
   heroCard:     { background: '#fff', borderBottom: '1px solid #E4E2DC', marginBottom: 8 },
   avatarWrap:   { display: 'flex', justifyContent: 'center', marginTop: -44, marginBottom: 10 },
@@ -439,7 +516,6 @@ const s = {
   bio:          { margin: '0 0 8px', fontSize: 13, color: '#888', fontFamily: 'DM Sans, sans-serif', textAlign: 'center', lineHeight: 1.5, maxWidth: 260, fontStyle: 'italic' },
   planRow:      { display: 'flex', marginBottom: 4 },
   planBadge:    { display: 'inline-flex', alignItems: 'center', fontSize: 12, fontWeight: 500, padding: '4px 14px', borderRadius: 20, fontFamily: 'DM Sans, sans-serif' },
-
   signalCard:      { margin: '12px 16px 4px', background: '#0A1628', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   signalLeft:      { flex: 1 },
   signalLabel:     { fontSize: 11, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, fontFamily: 'DM Sans, sans-serif' },
@@ -448,34 +524,27 @@ const s = {
   signalRight:     { textAlign: 'center', flexShrink: 0 },
   signalRank:      { background: '#0D9488', color: '#fff', padding: '5px 13px', borderRadius: 20, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', display: 'inline-block' },
   signalRankLabel: { fontSize: 10, color: '#64748B', marginTop: 4, fontFamily: 'DM Sans, sans-serif' },
-
   statsStrip:   { display: 'flex', borderTop: '1px solid #F3F2EF', margin: '8px 16px 0' },
   stripDiv:     { width: 1, backgroundColor: '#E4E2DC', margin: '8px 0' },
-
   actionRow:    { display: 'flex', gap: 8, padding: '12px 16px 16px' },
   btnPrimary:   { flex: 1, background: '#0D9488', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   btnOutline:   { flex: 1, background: '#fff', color: '#0D9488', border: '1.5px solid #0D9488', borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-
-  // Wall of Fame — white card, teal left border
   wofCard:    { margin: '0 16px 8px', background: '#fff', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', border: '1px solid #E4E2DC', borderLeft: '4px solid #0D9488' },
   wofMeta:    { fontSize: 11, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3, fontFamily: 'DM Sans, sans-serif' },
   wofTitle:   { fontSize: 15, fontWeight: 700, color: '#0A1628', fontFamily: 'DM Sans, sans-serif' },
   wofSub:     { fontSize: 11, color: '#64748B', marginTop: 3, fontFamily: 'DM Sans, sans-serif' },
   wofBtn:     { background: '#0D9488', color: '#fff', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 },
-
   certCard:     { margin: '0 16px 8px', background: '#fefcf7', border: '1px solid #d4b896', borderLeft: '4px solid #B8860B', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', boxShadow: '0 2px 8px rgba(184,134,11,0.08)' },
   certCardLeft: { flex: 1 },
   certCardMeta: { fontSize: 11, color: '#B8860B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3, fontFamily: 'DM Sans, sans-serif', fontWeight: 600 },
   certCardTitle:{ fontSize: 15, fontWeight: 700, color: '#0A1628', fontFamily: 'DM Sans, sans-serif' },
   certCardSub:  { fontSize: 11, color: '#8a7560', marginTop: 3, fontFamily: 'DM Sans, sans-serif' },
   certCardBtn:  { background: '#B8860B', color: '#fff', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 },
-
   upgradeBanner:{ margin: '0 16px 8px', background: '#F0FDF9', border: '1px solid #A7F3D0', borderRadius: 10, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   upgradeLeft:  { flex: 1 },
   upgradeTitle: { margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#064E3B', fontFamily: 'DM Sans, sans-serif' },
   upgradeSub:   { margin: 0, fontSize: 12, color: '#065F46', fontFamily: 'DM Sans, sans-serif' },
   upgradeBtn:   { flexShrink: 0, padding: '8px 16px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 20, fontSize: 12, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', cursor: 'pointer' },
-
   section:      { margin: '0 0 8px', backgroundColor: '#fff', borderTop: '1px solid #E4E2DC', borderBottom: '1px solid #E4E2DC', overflow: 'hidden' },
   version:      { textAlign: 'center', fontSize: 11, color: '#BBB', fontFamily: 'DM Sans, sans-serif', margin: '8px 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
 };
@@ -485,26 +554,22 @@ const sc = {
   value: { fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif', lineHeight: 1 },
   label: { fontSize: 10, color: '#94A3B8', fontFamily: 'DM Sans, sans-serif', textAlign: 'center', lineHeight: 1.3, marginTop: 2 },
 };
-
 const sh = {
   wrap:  { display: 'flex', alignItems: 'center', padding: '11px 14px 8px', borderBottom: '1px solid #F3F2EF' },
   text:  { margin: 0, fontSize: 11, fontWeight: 700, color: '#0A1628', fontFamily: 'DM Sans, sans-serif', letterSpacing: '0.06em', textTransform: 'uppercase', flex: 1 },
   badge: { background: '#0A1628', color: '#fff', borderRadius: 10, padding: '2px 8px', fontSize: 10, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' },
 };
-
 const ar = {
   row:     { display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' },
   iconWrap:{ width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   label:   { flex: 1, fontSize: 13, color: '#374151', fontFamily: 'DM Sans, sans-serif' },
   value:   { fontSize: 15, fontWeight: 700, color: '#0A1628', fontFamily: 'DM Sans, sans-serif' },
 };
-
 const ir = {
   row:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px' },
   label: { fontSize: 13, color: '#94A3B8', fontFamily: 'DM Sans, sans-serif' },
   value: { fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', textAlign: 'right', maxWidth: '60%' },
 };
-
 const mr = {
   row:     { display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px' },
   iconWrap:{ width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -513,7 +578,6 @@ const mr = {
   sub:     { fontSize: 11, color: '#999', fontFamily: 'DM Sans, sans-serif' },
   lockBtn: { background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', borderRadius: 12, padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'DM Sans, sans-serif', cursor: 'pointer', flexShrink: 0 },
 };
-
 const cr = {
   row:        { display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px' },
   avatar:     { width: 42, height: 42, borderRadius: '50%', background: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 15, fontWeight: 700, flexShrink: 0, fontFamily: 'DM Sans, sans-serif', border: '2px solid #5EEAD4' },
