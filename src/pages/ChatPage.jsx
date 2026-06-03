@@ -200,6 +200,14 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
+      {/* Privacy Notice */}
+      <div style={s.privacyNotice}>
+        <span style={{ fontSize: 13 }}>🔒</span>
+        <span style={s.privacyText}>
+          Messages are private between members. Do not share patient data, PHI, or confidential records. Misuse will result in immediate account suspension.
+        </span>
+      </div>
+
       {/* Input Bar */}
       <div style={s.inputBar}>
         <textarea
@@ -239,6 +247,8 @@ const s = {
   emptyChat:     { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 60 },
   emptyChatIcon: { fontSize: 36 },
   emptyChatText: { fontSize: 14, color: '#94A3B8' },
+  privacyNotice: { display: 'flex', alignItems: 'flex-start', gap: 6, padding: '7px 14px', background: '#FFF8E7', borderTop: '1px solid #FDE68A', flexShrink: 0 },
+  privacyText:   { fontSize: 11, color: '#92400E', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.4 },
   inputBar:      { display: 'flex', alignItems: 'flex-end', gap: 10, padding: '10px 14px', background: '#fff', borderTop: '1px solid #E4E2DC', flexShrink: 0 },
   input:         { flex: 1, border: '1px solid #E4E2DC', borderRadius: 20, padding: '9px 14px', fontSize: 13, fontFamily: 'DM Sans, sans-serif', color: '#0A1628', background: '#F3F2EF', outline: 'none', resize: 'none', maxHeight: 100, lineHeight: 1.5 },
   sendBtn:       { width: 38, height: 38, borderRadius: '50%', background: '#0D9488', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'opacity 0.2s' },
