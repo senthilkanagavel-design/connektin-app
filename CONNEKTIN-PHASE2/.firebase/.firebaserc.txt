@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "connektin-phase2",
+    "staging": "connektin-staging"
+  },
+  "targets": {
+    "connektin-phase2": {
+      "hosting": {
+        "live": ["connektin-phase2"]
+      }
+    },
+    "connektin-staging": {
+      "hosting": {
+        "staging": ["connektin-staging"]
+      }
+    }
+  }
+}

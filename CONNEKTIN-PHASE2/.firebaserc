@@ -1,0 +1,23 @@
+{
+  "projects": {},
+  "targets": {
+    "connektin-phase2": {
+      "hosting": {
+        "live": [
+          "connektin-phase2"
+        ],
+        "staging": [
+          "connektin-staging"
+        ]
+      }
+    },
+    "connektin-staging": {
+      "hosting": {
+        "staging": [
+          "connektin-staging"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,4 @@
+npm run build:live
+npm run deploy:live
+
+superadmin@connektin.in - Conn@1234! - Juliet

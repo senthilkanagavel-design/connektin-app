@@ -1,0 +1,241 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.phone{background:#0A1628;border-radius:36px;width:220px;min-height:420px;overflow:hidden;border:6px solid #1e3a5f;margin:0 auto}
+.screen{background:#F3F2EF;min-height:408px;display:flex;flex-direction:column}
+.step-wrap{display:none;flex-direction:column;align-items:center}
+.step-wrap.active{display:flex}
+.dot{width:6px;height:6px;border-radius:3px;background:#E4E2DC;transition:all 0.3s}
+.dot.active{width:16px;background:#0D9488}
+</style>
+
+<h2 class="sr-only">Interactive ConnektIn onboarding guide — tap through 6 steps</h2>
+
+<div style="background:#F3F2EF;padding:1.5rem 1rem;text-align:center">
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px">
+    <img src="/icon-512.png" style="width:28px;height:28px;border-radius:7px;object-fit:cover" alt="ConnektIn"/>
+    <span style="font-size:16px;font-weight:700;color:#0A1628">ConnektIn</span>
+  </div>
+  <div style="font-size:18px;font-weight:700;color:#0A1628;margin-bottom:4px">How to get started</div>
+  <div style="font-size:12px;color:#6B7280">Tap through the steps below</div>
+</div>
+
+<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 1rem 1rem">
+  <div class="dot active" id="d0"></div>
+  <div class="dot" id="d1"></div>
+  <div class="dot" id="d2"></div>
+  <div class="dot" id="d3"></div>
+  <div class="dot" id="d4"></div>
+  <div class="dot" id="d5"></div>
+</div>
+
+<div class="phone">
+  <div style="background:#0A1628;padding:8px 16px 6px;display:flex;align-items:center;gap:6px">
+    <img src="/icon-512.png" style="width:18px;height:18px;border-radius:4px;object-fit:cover" alt="ConnektIn"/>
+    <span style="color:#fff;font-size:11px;font-weight:700">connektin.in</span>
+    <div style="margin-left:auto;display:flex;gap:4px">
+      <div style="width:4px;height:4px;border-radius:50%;background:#0D9488"></div>
+      <div style="width:4px;height:4px;border-radius:50%;background:#0D9488;opacity:0.6"></div>
+      <div style="width:4px;height:4px;border-radius:50%;background:#0D9488;opacity:0.3"></div>
+    </div>
+  </div>
+
+  <div class="screen">
+
+    <div class="step-wrap active" id="s0">
+      <div style="background:#0A1628;width:100%;padding:20px 16px;display:flex;flex-direction:column;align-items:center">
+        <img src="/icon-512.png" style="width:52px;height:52px;border-radius:14px;object-fit:cover;margin-bottom:10px" alt="ConnektIn"/>
+        <div style="color:#fff;font-size:15px;font-weight:700">ConnektIn</div>
+        <div style="color:#0D9488;font-size:10px;margin-top:2px">YOUR PROFESSIONAL COMMUNITY</div>
+      </div>
+      <div style="padding:16px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:16px;font-weight:700;color:#0A1628;text-align:center;margin-bottom:6px">Your Next Big Break</div>
+        <div style="font-size:10px;color:#6B7280;text-align:center;line-height:1.5;margin-bottom:14px">Learn, grow and connect with professionals in Medical Coding & Billing</div>
+        <div style="width:100%;background:#0D9488;color:#fff;border-radius:20px;padding:10px;text-align:center;font-size:11px;font-weight:700">Get Started — It's Free</div>
+        <div style="font-size:10px;color:#9CA3AF;margin-top:8px">Already have an account? <span style="color:#0D9488">Sign in</span></div>
+      </div>
+    </div>
+
+    <div class="step-wrap" id="s1">
+      <div style="width:100%;background:#0A1628;padding:16px;display:flex;flex-direction:column;align-items:center">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <img src="/icon-512.png" style="width:28px;height:28px;border-radius:7px;object-fit:cover" alt="ConnektIn"/>
+          <span style="color:#fff;font-size:13px;font-weight:700">Connekt<span style="color:#0D9488">In</span></span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:2px">Create your account</div>
+        <div style="font-size:10px;color:#0D9488">Join your career community</div>
+      </div>
+      <div style="padding:12px;width:100%">
+        <div style="background:#fff;border-radius:8px;border:0.5px solid #E4E2DC;padding:10px">
+          <div style="font-size:10px;color:#6B7280;margin-bottom:8px;background:#E6FAF8;border-radius:6px;padding:6px">You get a <span style="color:#0D9488;font-weight:700">7-day free trial</span> — explore everything before you decide.</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px;border:0.5px solid #E4E2DC;border-radius:8px;margin-bottom:6px">
+            <div style="width:24px;height:24px;border-radius:5px;background:#E8F0FE;display:flex;align-items:center;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            </div>
+            <span style="font-size:10px;font-weight:600;color:#0A1628">Continue with Google</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px;border:0.5px solid #E4E2DC;border-radius:8px">
+            <div style="width:24px;height:24px;border-radius:5px;background:#F3F2EF;display:flex;align-items:center;justify-content:center">
+              <i class="ti ti-mail" style="font-size:13px;color:#6B7280" aria-hidden="true"></i>
+            </div>
+            <span style="font-size:10px;font-weight:600;color:#0A1628">Continue with Email</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-wrap" id="s2">
+      <div style="padding:12px 12px 0;width:100%">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px">
+          <img src="/icon-512.png" style="width:20px;height:20px;border-radius:5px;object-fit:cover" alt="ConnektIn"/>
+          <span style="font-size:11px;font-weight:700;color:#0D9488">ConnektIn</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#0A1628;margin-bottom:2px;text-align:center">Do you have a referral code?</div>
+        <div style="font-size:10px;color:#6B7280;text-align:center;margin-bottom:10px">Thermite students get special pricing</div>
+        <div style="background:#fff;border-radius:8px;border:0.5px solid #E4E2DC;padding:10px">
+          <div style="background:#0D9488;color:#fff;border-radius:6px;padding:8px;text-align:center;font-size:10px;font-weight:700;margin-bottom:6px">Yes, I have a referral code</div>
+          <div style="border:0.5px solid #E4E2DC;border-radius:6px;padding:8px;text-align:center;font-size:10px;color:#6B7280">No, show me the plans</div>
+        </div>
+        <div style="margin-top:10px;background:#E6FAF8;border-radius:8px;padding:8px;border:0.5px solid #9FE1CB">
+          <div style="font-size:9px;font-weight:700;color:#085041;margin-bottom:4px">THERMITE PLAN — REFERRAL PRICING</div>
+          <div style="font-size:20px;font-weight:800;color:#0D9488">₹49<span style="font-size:10px;font-weight:400;color:#6B7280">/month</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-wrap" id="s3">
+      <div style="padding:12px;width:100%">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px">
+          <img src="/icon-512.png" style="width:20px;height:20px;border-radius:5px;object-fit:cover" alt="ConnektIn"/>
+          <span style="font-size:11px;font-weight:700;color:#0D9488">ConnektIn</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#0A1628;text-align:center;margin-bottom:8px">Your career just got an upgrade</div>
+        <div style="background:#fff;border-radius:8px;border:0.5px solid #E4E2DC;overflow:hidden">
+          <div style="background:#E6FAF8;padding:8px 10px;border-bottom:0.5px solid #E4E2DC">
+            <div style="font-size:9px;font-weight:700;color:#085041">EVERYTHING YOU GET</div>
+          </div>
+          <div style="padding:8px 10px;display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#0A1628"><span style="color:#0D9488;font-weight:700">✓</span> Community feed & stories</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#0A1628"><span style="color:#0D9488;font-weight:700">✓</span> Articles — Beginner to Advanced</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#0A1628"><span style="color:#0D9488;font-weight:700">✓</span> Browse & apply to jobs</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#0A1628"><span style="color:#0D9488;font-weight:700">✓</span> E-Certificate every 90 days</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#0A1628"><span style="color:#0D9488;font-weight:700">✓</span> Live webinars every 15 days</div>
+          </div>
+          <div style="background:#0A1628;padding:8px 10px;font-size:9px;color:#9CA3AF">Everything you need to learn, connect & grow</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-wrap" id="s4">
+      <div style="padding:12px;width:100%">
+        <div style="font-size:12px;font-weight:700;color:#0A1628;text-align:center;margin-bottom:6px">Make it yours</div>
+        <div style="font-size:10px;color:#6B7280;text-align:center;margin-bottom:8px">Pick an avatar & add a bio</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
+          <div style="background:#E6FAF8;border-radius:8px;padding:8px;text-align:center;border:2px solid #0D9488">
+            <div style="width:28px;height:28px;border-radius:50%;background:#0A1628;margin:0 auto;display:flex;align-items:center;justify-content:center">
+              <i class="ti ti-user" style="font-size:14px;color:#0D9488" aria-hidden="true"></i>
+            </div>
+          </div>
+          <div style="background:#F3F2EF;border-radius:8px;padding:8px;text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#0A1628;margin:0 auto"></div></div>
+          <div style="background:#F3F2EF;border-radius:8px;padding:8px;text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#0A1628;margin:0 auto"></div></div>
+          <div style="background:#F3F2EF;border-radius:8px;padding:8px;text-align:center"><div style="width:28px;height:28px;border-radius:50%;background:#0A1628;margin:0 auto"></div></div>
+        </div>
+        <div style="background:#F3F2EF;border-radius:8px;padding:8px;font-size:9px;color:#9CA3AF;border:0.5px solid #E4E2DC;margin-bottom:8px">Add a short bio (optional)...</div>
+        <div style="background:#0D9488;color:#fff;border-radius:20px;padding:8px;text-align:center;font-size:11px;font-weight:700">Let's Go</div>
+      </div>
+    </div>
+
+    <div class="step-wrap" id="s5">
+      <div style="background:#0A1628;width:100%;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px">
+          <img src="/icon-512.png" style="width:18px;height:18px;border-radius:4px;object-fit:cover" alt="ConnektIn"/>
+          <div>
+            <div style="color:#fff;font-size:10px;font-weight:600">Good morning!</div>
+            <div style="color:#0D9488;font-size:9px">Build your professional story.</div>
+          </div>
+        </div>
+        <div style="width:26px;height:26px;border-radius:50%;background:#0D9488;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          <i class="ti ti-user" style="font-size:14px;color:#fff" aria-hidden="true"></i>
+        </div>
+      </div>
+      <div style="padding:8px 10px;flex:1">
+        <div style="background:#fff;border-radius:8px;border:0.5px solid #E4E2DC;padding:8px;margin-bottom:6px">
+          <div style="font-size:9px;font-weight:700;color:#0D9488;margin-bottom:4px">STORIES</div>
+          <div style="display:flex;gap:6px">
+            <div style="width:32px;height:32px;border-radius:50%;background:#0A1628;border:2px dashed #0D9488;display:flex;align-items:center;justify-content:center"><span style="color:#0D9488;font-size:14px;font-weight:700">+</span></div>
+            <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;border:2px solid #0D9488">
+              <img src="/icon-512.png" style="width:100%;height:100%;object-fit:cover" alt=""/>
+            </div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:8px;border:0.5px solid #E4E2DC;padding:8px">
+          <div style="font-size:9px;color:#6B7280;margin-bottom:6px">Share something with the community...</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <div style="background:#E6FAF8;color:#085041;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">Articles</div>
+            <div style="background:#EEF4FB;color:#0C447C;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">Jobs</div>
+            <div style="background:#F5F3FF;color:#3C3489;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">Community</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#fff;border-top:0.5px solid #E4E2DC;display:flex;padding:6px 0;width:100%">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <i class="ti ti-home" style="font-size:16px;color:#0D9488" aria-hidden="true"></i>
+          <span style="font-size:8px;color:#0D9488;font-weight:700">Home</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <i class="ti ti-message" style="font-size:16px;color:#9CA3AF" aria-hidden="true"></i>
+          <span style="font-size:8px;color:#9CA3AF">Posts</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <i class="ti ti-file-text" style="font-size:16px;color:#9CA3AF" aria-hidden="true"></i>
+          <span style="font-size:8px;color:#9CA3AF">Articles</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <i class="ti ti-briefcase" style="font-size:16px;color:#9CA3AF" aria-hidden="true"></i>
+          <span style="font-size:8px;color:#9CA3AF">Jobs</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <i class="ti ti-user" style="font-size:16px;color:#9CA3AF" aria-hidden="true"></i>
+          <span style="font-size:8px;color:#9CA3AF">Me</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:16px;padding:0 1rem">
+  <button onclick="prev()" id="prev-btn" style="background:#F3F2EF;border:0.5px solid #E4E2DC;border-radius:20px;padding:8px 20px;font-size:12px;font-weight:700;color:#6B7280;cursor:pointer;font-family:'DM Sans',sans-serif;display:none">← Back</button>
+  <div style="flex:1;text-align:center;font-size:11px;color:#9CA3AF" id="step-label">Step 1 of 6 — Welcome</div>
+  <button onclick="next()" id="next-btn" style="background:#0D9488;border:none;border-radius:20px;padding:8px 20px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">Next →</button>
+</div>
+
+<div style="margin-top:1rem;padding:0 1rem 1rem">
+  <div style="background:#E6FAF8;border-radius:10px;border:0.5px solid #9FE1CB;padding:10px 14px">
+    <div style="font-size:11px;font-weight:700;color:#085041;margin-bottom:2px">Tip</div>
+    <div style="font-size:11px;color:#0F6E56;line-height:1.5" id="tip-text">Open connektin.in in your mobile browser and tap Get Started to begin.</div>
+  </div>
+</div>
+
+<script>
+const steps=[
+  {label:"Step 1 of 6 — Welcome",tip:"Open connektin.in in your mobile browser and tap Get Started to begin."},
+  {label:"Step 2 of 6 — Sign up",tip:"Use your Google account for the fastest signup — no password needed."},
+  {label:"Step 3 of 6 — Referral code",tip:"If Bharath gave you a code, enter it here to get the Thermite plan at ₹49/month."},
+  {label:"Step 4 of 6 — What you get",tip:"Swipe through to see all the features — articles, jobs, webinars, and certificates."},
+  {label:"Step 5 of 6 — Your profile",tip:"Pick an avatar that represents you. Add a short bio — it helps others connect with you."},
+  {label:"Step 6 of 6 — Dashboard",tip:"You're in! Start by reading your first article or saying hello in the community feed."},
+];
+let cur=0;
+function show(n){
+  document.querySelectorAll('.step-wrap').forEach((s,i)=>s.classList.toggle('active',i===n));
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));
+  document.getElementById('step-label').textContent=steps[n].label;
+  document.getElementById('tip-text').textContent=steps[n].tip;
+  document.getElementById('prev-btn').style.display=n>0?'block':'none';
+  document.getElementById('next-btn').textContent=n===steps.length-1?'Start now!':'Next →';
+  cur=n;
+}
+function next(){if(cur<steps.length-1)show(cur+1);else window.open('https://connektin.in','_blank');}
+function prev(){if(cur>0)show(cur-1);}
+</script>

@@ -1,0 +1,38 @@
+Here's your context snapshot Baby — copy and save this:
+
+CONNEKTIN — SESSION CONTEXT
+Project: ConnektIn (connektin.in) — Professional networking PWA for all industries. RCM/Healthcare is first vertical.
+Firebase projects:
+
+Production: connektin-phase2 → connektin.in
+Staging: connektin-staging → connektin-staging.web.app
+Rule: No production deployment until June 30, 2026
+
+TWA: C:\Sen\YellowBot\CONNEKTIN-TWA — AAB uploaded to Play Store internal testing ✅ (package: app.connektin.android)
+Local staging path: C:\Sen\YellowBot\CONNEKTIN-STAGING\
+Tech stack: React 18 + Vite 5 + Firebase v10 (Auth, Firestore, Storage, Hosting) + React Router
+Day 3 completed features:
+
+AvatarFullView.jsx — tap profile photo to fullscreen (PostCard, ProfileTab, UserProfilePage)
+PostImageFullView.jsx — tap post image to fullscreen (HomeTab, PostCard)
+Stories fix — Storage rules updated on staging (stories/ path added)
+Today's content published — Story, Post, Article + 3 branded images with ConnektIn logo
+
+Pending:
+
+Firestore user fix — tier showing "regular" instead of "thermite" for some users
+Feature graphic (1024×500) for Play Store
+Store listing save and submit
+GitHub setup + CI/CD pipeline (in progress — next step)
+
+Key components modified today:
+
+src/components/AvatarFullView.jsx ← new
+src/components/PostImageFullView.jsx ← new
+src/components/PostCard.jsx ← updated
+src/pages/tabs/ProfileTab.jsx ← updated
+src/pages/UserProfilePage.jsx ← updated
+src/pages/tabs/HomeTab.jsx ← updated
+
+Owner: Sen (N.K. Senthil Vel Murugan), YellowBot ecosystem, Electronic City Bengaluru. Independent consultant + entrepreneur. Revenue target ₹2.5–3L/month.
+Working style: One step at a time. Direct and honest. No false optimism. Address Sen as "Baby."

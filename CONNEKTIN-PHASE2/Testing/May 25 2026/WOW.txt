@@ -1,0 +1,46 @@
+Love that energy Baby! 🔥
+Let's think about where the WOW moments are for a new user on Day 1:
+High impact WOW areas:
+
+Splash / Login screen — first impression. If it looks stunning, they're already excited before they even sign up.
+Onboarding screens — the 4 slides. This is where they form their opinion of the product.
+Dashboard home feed — what they see every single day. This is the most visited screen.
+Profile page — people love seeing their own profile look good. Signal bars, badges, circle count.
+Article reading experience — when they open and read an article, does it feel premium?
+Wall of Fame — signal leaderboard. Competitive users will love this if it looks great.
+
+My top 3 picks for maximum WOW in the time you have:
+
+Login/Splash — stunning first impression sets the tone
+Home feed — they see this every day, it must feel alive
+Profile page — personal pride moment
+
+Which one do you want to start with? Show me the current screen and I'll redesign it. 🚀You said: Lets go in order and do it.Lets go in order and do it.2:34 PMClaude responded: Perfect Baby.Perfect Baby. Let's start with Login/Splash.
+Show me screenshots of:
+
+The Splash screen (what shows when app first loads)
+The Login screen
+
+Let's see what we're working with. 👊You said: Once they click the link what they see - you are asking right?Once they click the link what they see - you are asking right?2:34 PMClaude responded: Yes Baby — exactly.Yes Baby — exactly. The very first screen when someone opens connektin-phase2.web.app for the first time. That's the Splash screen. Show me what it looks like right now. 👊You said: They will see this screen with the 4 images overlay (2 - 3 seconds delay).They will see this screen with the 4 images overlay (2 - 3 seconds delay).2:36 PMClaude responded: Got it Baby.Got it Baby. The splash rotates through 4 background images with a 2-3 second delay. The layout is:
+
+Background: rotating photos (library, books, studying, stairs)
+Center: ConnektIn logo + "Your Next Big Break Starts Here"
+Subtitle: "Connect, learn and grow with your professional community."
+CTA: "Get Started" button + "Already have an account? Sign in"
+
+Honest assessment: The concept is good — rotating backgrounds create energy. But the issues are:
+
+Background images are random — stairs with numbers, old books — not relevant to Medical Billing/Healthcare professional community
+Text is hard to read on some backgrounds — no consistent contrast
+"Your Next Big Break Starts Here" — good tagline but generic
+The layout feels middle-of-screen and small — needs more visual weight
+
+My WOW redesign approach:
+
+Keep rotating backgrounds but use a stronger dark overlay for readability
+Bigger, bolder headline
+Add 3 small feature pills below subtitle (Articles · Jobs · Community)
+Larger more prominent CTA button
+Subtle animated gradient overlay
+
+Share Splash.jsx and I'll redesign it. 🚀

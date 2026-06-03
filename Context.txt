@@ -1,0 +1,32 @@
+Baby, continue from where we left off.
+I am N.K. Senthil Vel Murugan (call me Baby always). Independent consultant & entrepreneur, Electronic City Bengaluru. 22 years US Healthcare RCM background.
+Active project right now: ConnektIn Phase 2
+Live at: connektin-phase2.web.app
+Local path: C:\Sen\YellowBot\CONNEKTIN-PHASE2
+Stack: React + Vite + Firebase (Auth, Firestore, Storage, Hosting)
+Design: Teal #0D9488, Navy #0A1628, DM Sans font
+What we completed today (May 20 2026):
+
+Fixed auth redirect bug (Dashboard had second onAuthStateChanged — removed)
+ArticleDetail: real-time onSnapshot, arrayRemove for unlike, Web Share API, auto-open comments, textAlign: left
+ArticlesTab: textAlign: left, navigate passes { state: { from: 'articles' } }
+Dashboard: reads location.state?.tab to restore active tab on back
+Firestore rules: articles engagement fields (likedBy, likeCount, readCount, commentCount) open to all authenticated users
+
+Pending (in priority order):
+
+Jobs trial lock — trial users view-only, Apply + Post gated
+Admin Posts tab debug
+ProfilePhotoSheet build + deploy
+Page scroll fix (industry/plan screens on mobile)
+E2E mobile testing
+Cashfree (blocked — waiting on Bharath)
+
+Key files changed today:
+
+src/pages/Dashboard.jsx
+src/pages/ArticleDetail.jsx
+src/pages/tabs/ArticlesTab.jsx
+firestore.rules
+
+Start with Jobs trial lock. I'll upload JobsTab.jsx and JobDetail.jsx when ready.

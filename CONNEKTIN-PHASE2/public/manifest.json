@@ -1,0 +1,69 @@
+{
+  "id": "/",
+  "name": "ConnektIn",
+  "short_name": "ConnektIn",
+  "description": "Your professional community. Learn, grow and connect with professionals in your industry. Access curated articles, job listings, community posts and earn certificates.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A1628",
+  "theme_color": "#0D9488",
+  "categories": ["social", "education", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-1-splash.jpeg",
+      "sizes": "722x1600",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "ConnektIn — Your Professional Community"
+    },
+    {
+      "src": "/screenshots/screenshot-2-posts.jpeg",
+      "sizes": "722x1600",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Community Posts — Share insights with your industry"
+    },
+    {
+      "src": "/screenshots/screenshot-3-articles.jpeg",
+      "sizes": "722x1600",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Articles — Beginner to Advanced learning"
+    },
+    {
+      "src": "/screenshots/screenshot-4-jobs.jpeg",
+      "sizes": "722x1600",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Jobs — Industry-filtered opportunities"
+    },
+    {
+      "src": "/screenshots/screenshot-5-certificate.jpeg",
+      "sizes": "722x1600",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Certificate — Earn your 90-day achievement"
+    }
+  ]
+}

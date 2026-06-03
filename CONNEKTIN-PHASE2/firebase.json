@@ -1,0 +1,36 @@
+{
+  "hosting": [
+    {
+      "target": "live",
+      "public": "dist",
+      "ignore": ["firebase.json", "**/node_modules/**"],
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "headers": [
+        {
+          "source": "/.well-known/**",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Access-Control-Allow-Origin", "value": "*" }
+          ]
+        }
+      ],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "staging",
+      "public": "dist",
+      "ignore": ["firebase.json", "**/node_modules/**"],
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

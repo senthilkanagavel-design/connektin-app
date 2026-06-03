@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isCircleUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['circleRequests', 'circleMembers', 'circleCount',
+                  'circlingCount', 'circling', 'circleSent', 'profileViews',
+                  'weeklySignal', 'monthlySignal', 'allTimeSignal',
+                  'weeklySignalReset', 'monthlySignalReset']);
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.uid == uid ||
+        isAdmin() ||
+        isCircleUpdate()
+      );
+    }
+    match /admins/{uid} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    match /companies/{companyId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    match /stories/{storyId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.uid;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.uid || isAdmin());
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.uid;
+        allow delete: if request.auth != null
+          && (request.auth.uid == resource.data.uid || isAdmin());
+      }
+    }
+    match /articles/{articleId} {
+      allow read: if request.auth != null
+        && (resource.data.status == 'published' || isAdmin());
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.authorUid
+        && (request.resource.data.status == 'pending' || isAdmin());
+      allow update: if request.auth != null
+        && (request.auth.uid == resource.data.authorUid
+            || isAdmin()
+            || request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['likedBy', 'likeCount', 'readCount', 'commentCount']));
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.authorUid || isAdmin());
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.uid;
+        allow delete: if request.auth != null
+          && (request.auth.uid == resource.data.uid || isAdmin());
+      }
+    }
+    match /jobs/{jobId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.hrUid
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan != 'trial';
+      allow update: if request.auth != null
+        && (request.auth.uid == resource.data.hrUid
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['savedBy'])
+            || isAdmin());
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.hrUid || isAdmin());
+    }
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.uid
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan != 'trial';
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null
+        && (request.auth.uid == resource.data.uid || isAdmin());
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.uid
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan != 'trial';
+        allow delete: if request.auth != null
+          && (request.auth.uid == resource.data.uid || isAdmin());
+      }
+    }
+    match /weeklyGames/{weekId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+      match /results/{uid} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          && !exists(/databases/$(database)/documents/weeklyGames/$(weekId)/results/$(uid));
+        allow update, delete: if false;
+      }
+    }
+  }
+}
