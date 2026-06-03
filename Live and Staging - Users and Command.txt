@@ -2,3 +2,11 @@ npm run build:live
 npm run deploy:live
 
 superadmin@connektin.in - Conn@1234! - Juliet
+
+user@connektin.in
+
+
+cd C:\Sen\YellowBot\CONNEKTIN-STAGING
+git pull
+npm run build
+firebase deploy --only hosting --project connektin-staging
