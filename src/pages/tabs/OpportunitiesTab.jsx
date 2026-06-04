@@ -414,7 +414,7 @@ function InternshipsPanel({ userData, isTrial, onUpgrade }) {
             <InternshipCard
               key={item.id}
               item={item}
-              onPress={() => navigate(`/internships/${item.id}`)}
+              onPress={() => navigate(`/opportunities/internship/${item.id}`)}
             />
           ))
         )}
@@ -534,7 +534,7 @@ function JobsPanel({ userData, isTrial, onUpgrade }) {
               job={job}
               isTrial={isTrial}
               navigate={navigate}
-              onPress={() => navigate(`/jobs/${job.id}`)}
+              onPress={() => navigate(`/opportunities/job/${job.id}`)}
             />
           ))
         )}
