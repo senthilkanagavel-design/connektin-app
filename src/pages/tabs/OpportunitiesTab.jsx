@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase/config';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../../components/Avatar';
 
@@ -325,11 +325,12 @@ function InternshipsPanel({ userData, isTrial, onUpgrade }) {
     try {
       const q = query(
         collection(db, 'internships'),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc')
+        where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0));
+      setItems(list);
     } catch (err) {
       console.error('Internships fetch error:', err);
     }
@@ -445,11 +446,12 @@ function JobsPanel({ userData, isTrial, onUpgrade }) {
     try {
       const q = query(
         collection(db, 'jobs'),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc')
+        where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0));
+      setJobs(list);
     } catch (err) {
       console.error('Jobs fetch error:', err);
     }
