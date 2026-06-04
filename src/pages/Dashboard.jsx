@@ -10,6 +10,7 @@ import PulseButton from '../components/PulseButton';
 import HomeTab from './tabs/HomeTab';
 import ArticlesTab from './tabs/ArticlesTab';
 import JobsTab from './tabs/JobsTab';
+import OpportunitiesTab from './tabs/OpportunitiesTab';
 import PostsTab from './tabs/PostsTab';
 import ProfileTab from './tabs/ProfileTab';
 
@@ -395,7 +396,8 @@ export default function Dashboard() {
     home:     HomeTab,
     posts:    PostsTab,
     articles: ArticlesTab,
-    jobs:     JobsTab,
+    jobs:          JobsTab,
+    opportunities: OpportunitiesTab,
     profile:  ProfileTab,
   };
   const ActiveComponent = tabComponents[activeTab] || HomeTab;
