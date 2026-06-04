@@ -104,40 +104,48 @@ const Pill = React.forwardRef(function Pill({ label, active, hasDropdown = false
 // ─── Dropdown menu ────────────────────────────────────────────────────────────
 
 function DropdownMenu({ options, selected, onSelect, onClose, anchorRef }) {
-  const ref = useRef(null);
-  const [pos, setPos] = React.useState({ top: 0, left: 0 });
+  const [pos, setPos] = React.useState({ top: 0, left: 0, width: 160 });
 
   useEffect(() => {
+    // Calculate position from anchor
     if (anchorRef?.current) {
       const rect = anchorRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, left: rect.left });
+      setPos({
+        top:   rect.bottom + 4,
+        left:  rect.left,
+        width: Math.max(rect.width, 160),
+      });
     }
-    function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target) &&
-          anchorRef?.current && !anchorRef.current.contains(e.target)) onClose();
-    }
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('touchstart', handleClick);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('touchstart', handleClick);
-    };
+    // Close on outside tap — delayed so the open-click doesn't immediately close it
+    const timer = setTimeout(() => {
+      function handleOutside(e) {
+        if (anchorRef?.current && !anchorRef.current.contains(e.target)) onClose();
+      }
+      document.addEventListener('mousedown', handleOutside);
+      document.addEventListener('touchstart', handleOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleOutside);
+        document.removeEventListener('touchstart', handleOutside);
+      };
+    }, 50);
+    return () => clearTimeout(timer);
   }, [onClose]);
 
-  return (
+  // Portal renders directly into document.body — escapes ALL overflow/zIndex stacking
+  return React.createPortal(
     <div
-      ref={ref}
       style={{
-        position: 'fixed',
-        top: pos.top,
-        left: pos.left,
-        background: '#fff',
-        border: '1px solid #E4E2DC',
+        position:     'fixed',
+        top:          pos.top,
+        left:         pos.left,
+        minWidth:     pos.width,
+        background:   '#fff',
+        border:       '1px solid #E4E2DC',
         borderRadius: 12,
-        overflow: 'hidden',
-        zIndex: 9999,
-        minWidth: 160,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+        zIndex:       999999,
+        boxShadow:    '0 8px 28px rgba(0,0,0,0.18)',
+        overflow:     'hidden',
+        fontFamily:   "'DM Sans', sans-serif",
       }}
     >
       {options.map((opt, i) => {
@@ -145,18 +153,19 @@ function DropdownMenu({ options, selected, onSelect, onClose, anchorRef }) {
         return (
           <div
             key={opt.value}
-            onClick={() => { onSelect(opt.value); onClose(); }}
+            onMouseDown={e => { e.preventDefault(); onSelect(opt.value); onClose(); }}
+            onTouchEnd={e =>  { e.preventDefault(); onSelect(opt.value); onClose(); }}
             style={{
-              padding: '11px 14px',
-              fontSize: 13,
-              fontWeight: isSelected ? 700 : 400,
-              color: isSelected ? '#0D9488' : '#374151',
+              padding:      '13px 16px',
+              fontSize:     13,
+              fontWeight:   isSelected ? 700 : 500,
+              color:        isSelected ? '#0D9488' : '#374151',
+              background:   isSelected ? '#F0FDFB' : '#fff',
               borderBottom: i < options.length - 1 ? '1px solid #F3F2EF' : 'none',
-              display: 'flex',
-              alignItems: 'center',
+              display:      'flex',
+              alignItems:   'center',
               justifyContent: 'space-between',
-              cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
+              cursor:       'pointer',
             }}
           >
             {opt.label}
@@ -168,7 +177,8 @@ function DropdownMenu({ options, selected, onSelect, onClose, anchorRef }) {
           </div>
         );
       })}
-    </div>
+    </div>,
+    document.body
   );
 }
 
