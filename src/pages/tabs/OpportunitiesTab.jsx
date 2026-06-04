@@ -1,5 +1,5 @@
 // src/pages/tabs/OpportunitiesTab.jsx
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -68,7 +68,7 @@ function Spinner() {
 
 // ─── Filter pill ─────────────────────────────────────────────────────────────
 
-function Pill({ label, active, hasDropdown = false, onClick, style = {} }) {
+const Pill = React.forwardRef(function Pill({ label, active, hasDropdown = false, onClick, style = {} }, ref) {
   return (
     <button
       onClick={onClick}
@@ -89,6 +89,7 @@ function Pill({ label, active, hasDropdown = false, onClick, style = {} }) {
         whiteSpace: 'nowrap',
         ...style,
       }}
+      ref={ref}
     >
       {label}
       {hasDropdown && (
@@ -98,16 +99,22 @@ function Pill({ label, active, hasDropdown = false, onClick, style = {} }) {
       )}
     </button>
   );
-}
+});
 
 // ─── Dropdown menu ────────────────────────────────────────────────────────────
 
-function DropdownMenu({ options, selected, onSelect, onClose }) {
+function DropdownMenu({ options, selected, onSelect, onClose, anchorRef }) {
   const ref = useRef(null);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
 
   useEffect(() => {
+    if (anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 6, left: rect.left });
+    }
     function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
+      if (ref.current && !ref.current.contains(e.target) &&
+          anchorRef?.current && !anchorRef.current.contains(e.target)) onClose();
     }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
@@ -121,17 +128,16 @@ function DropdownMenu({ options, selected, onSelect, onClose }) {
     <div
       ref={ref}
       style={{
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        marginTop: 6,
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
         background: '#fff',
         border: '1px solid #E4E2DC',
         borderRadius: 12,
         overflow: 'hidden',
-        zIndex: 50,
-        minWidth: 150,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+        zIndex: 9999,
+        minWidth: 160,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
       }}
     >
       {options.map((opt, i) => {
@@ -317,6 +323,7 @@ function InternshipsPanel({ userData, isTrial, onUpgrade }) {
   const [domain,       setDomain]       = useState('all');
   const [duration,     setDuration]     = useState(null);
   const [durationOpen, setDurationOpen] = useState(false);
+  const durationRef = useRef(null);
 
   useEffect(() => { fetchInternships(); }, []);
 
@@ -377,6 +384,7 @@ function InternshipsPanel({ userData, isTrial, onUpgrade }) {
             active={!!duration}
             hasDropdown
             onClick={() => setDurationOpen(p => !p)}
+            ref={durationRef}
           />
           {durationOpen && (
             <DropdownMenu
@@ -384,6 +392,7 @@ function InternshipsPanel({ userData, isTrial, onUpgrade }) {
               selected={duration}
               onSelect={val => { setDuration(val); setFilterAll(false); }}
               onClose={() => setDurationOpen(false)}
+              anchorRef={durationRef}
             />
           )}
         </div>
@@ -438,6 +447,7 @@ function JobsPanel({ userData, isTrial, onUpgrade }) {
   const [domain,        setDomain]        = useState('all');
   const [workType,      setWorkType]      = useState(null);
   const [workTypeOpen,  setWorkTypeOpen]  = useState(false);
+  const workTypeRef = useRef(null);
 
   useEffect(() => { fetchJobs(); }, [userData?.uid]);
 
@@ -493,6 +503,7 @@ function JobsPanel({ userData, isTrial, onUpgrade }) {
             active={!!workType}
             hasDropdown
             onClick={() => setWorkTypeOpen(p => !p)}
+            ref={workTypeRef}
           />
           {workTypeOpen && (
             <DropdownMenu
@@ -500,6 +511,7 @@ function JobsPanel({ userData, isTrial, onUpgrade }) {
               selected={workType}
               onSelect={val => { setWorkType(val); setFilterAll(false); }}
               onClose={() => setWorkTypeOpen(false)}
+              anchorRef={workTypeRef}
             />
           )}
         </div>
