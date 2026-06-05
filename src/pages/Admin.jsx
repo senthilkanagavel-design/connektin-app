@@ -1017,7 +1017,6 @@ function BroadcastTab() {
 }
 
 
-// ── CORPORATE TAB ──────────────────────────────────────────────────────────────
 function CoLogo({ c, size = 48 }) {
   const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const palettes = [
@@ -1043,8 +1042,6 @@ function CorporateTab() {
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState("");
   const [selected, setSelected]     = useState(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = React.useRef(null);
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "companies")), snap => {
@@ -1056,14 +1053,9 @@ function CorporateTab() {
     return unsub;
   }, []);
 
-  useEffect(() => {
-    if (searchOpen && searchRef.current) {
-      setTimeout(() => searchRef.current.focus(), 50);
-    }
-  }, [searchOpen]);
-
+  // Show all when < 3 chars, filter on 3+
   const filtered = companies.filter(c => {
-    if (search.length < 3) return true;
+    if (!search || search.length < 3) return true;
     const q = search.toLowerCase();
     return (
       c.name?.toLowerCase().includes(q) ||
@@ -1072,25 +1064,31 @@ function CorporateTab() {
     );
   });
 
-  function CompanyLogo({ c, size = 48 }) {
-    return <CoLogo c={c} size={size} />;
-  }
-
-  // ── Profile modal ──
+  // Profile view
   if (selected) {
     const c = selected;
+    const palettes = [
+      { bg: "#E6FAF8", color: "#0F6E56" },
+      { bg: "#E6F1FB", color: "#185FA5" },
+      { bg: "#F5F3FF", color: "#534AB7" },
+      { bg: "#FEF3C7", color: "#854F0B" },
+      { bg: "#FAECE7", color: "#993C1D" },
+    ];
+    const p = palettes[(c.name?.charCodeAt(0) || 65) % palettes.length];
+    const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
     return (
       <div>
         <button onClick={() => setSelected(null)} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, background: "none", border: "none", color: T.teal, fontFamily: T.font, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}>
           {Icon.back} Back to directory
         </button>
-
         <div style={{ background: T.white, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden", maxWidth: 560 }}>
-          {/* Header band */}
           <div style={{ background: "#0A1628", padding: "20px 20px 0", display: "flex", alignItems: "flex-end", gap: 16 }}>
             <div style={{ marginBottom: -16, flexShrink: 0 }}>
               <div style={{ border: "3px solid #fff", borderRadius: 12, overflow: "hidden" }}>
-                <CompanyLogo c={c} size={64} />
+                {c.logoURL
+                  ? <img src={c.logoURL} alt={c.name} style={{ width: 64, height: 64, objectFit: "contain" }} />
+                  : <div style={{ width: 64, height: 64, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, fontFamily: T.font }}>{initials}</div>
+                }
               </div>
             </div>
             <div style={{ paddingBottom: 20 }}>
@@ -1098,42 +1096,36 @@ function CorporateTab() {
               {c.tagline && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: T.font, marginTop: 3 }}>{c.tagline}</div>}
             </div>
           </div>
-
           <div style={{ padding: "28px 20px 20px" }}>
-            {/* Meta row */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-              {c.industry  && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>{c.industry.replace(/_/g, " ")}</span>}
-              {c.location  && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📍 {c.location}</span>}
-              {c.size      && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>👥 {c.size}</span>}
-              {c.founded   && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📅 Est. {c.founded}</span>}
+              {c.industry && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>{c.industry.replace(/_/g, " ")}</span>}
+              {c.location && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📍 {c.location}</span>}
+              {c.size     && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>👥 {c.size}</span>}
+              {c.founded  && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📅 Est. {c.founded}</span>}
             </div>
-
-            {/* About */}
             {c.about && (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6, fontFamily: T.font }}>About</div>
                 <div style={{ fontSize: 13, color: T.text, lineHeight: 1.7, fontFamily: T.font }}>{c.about}</div>
               </div>
             )}
-
-            {/* Details grid */}
             <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, fontFamily: T.font }}>Details</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  { label: "Website",   value: c.website   },
-                  { label: "Location",  value: c.location  },
-                  { label: "Team size", value: c.size      },
-                  { label: "Founded",   value: c.founded   },
-                  { label: "Industry",  value: c.industry?.replace(/_/g, " ") },
-                  { label: "Followers", value: c.followers?.length ?? 0 },
+                  { label: "Website",    value: c.website },
+                  { label: "Location",   value: c.location },
+                  { label: "Team size",  value: c.size },
+                  { label: "Founded",    value: c.founded },
+                  { label: "Industry",   value: c.industry?.replace(/_/g, " ") },
+                  { label: "Followers",  value: c.followers?.length ?? 0 },
                   { label: "Registered", value: c.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—" },
-                ].filter(d => d.value).map(d => (
+                ].filter(d => d.value !== undefined && d.value !== null && d.value !== "").map(d => (
                   <div key={d.label} style={{ background: "#F6F8FA", borderRadius: 8, padding: "9px 12px" }}>
                     <div style={{ fontSize: 10, color: T.faint, fontFamily: T.font, marginBottom: 2 }}>{d.label}</div>
                     {d.label === "Website"
                       ? <a href={d.value} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: T.teal, fontFamily: T.font, wordBreak: "break-all" }}>{d.value}</a>
-                      : <div style={{ fontSize: 12, fontWeight: 600, color: T.text, fontFamily: T.font }}>{d.value}</div>
+                      : <div style={{ fontSize: 12, fontWeight: 600, color: T.text, fontFamily: T.font }}>{String(d.value)}</div>
                     }
                   </div>
                 ))}
@@ -1145,87 +1137,75 @@ function CorporateTab() {
     );
   }
 
-  // -- Directory view --
+  // Directory view
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: 0, fontFamily: T.font }}>Corporate directory ({companies.length})</h2>
-        <button
-          onClick={() => setSearchOpen(true)}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font, color: search.length >= 3 ? T.teal : T.muted }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          {search.length >= 3 ? `"${search}"` : "Search"}
-        </button>
+      <SectionHeader title={`Corporate directory (${companies.length})`} />
+
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          type="text"
+          placeholder="Search by name, industry or location (3+ chars)…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ width: "100%", padding: "10px 14px 10px 36px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#1A1A1A", caretColor: "#0D9488", boxSizing: "border-box" }}
+        />
+        {search.length > 0 && search.length < 3 && (
+          <div style={{ fontSize: 11, color: T.faint, marginTop: 4, fontFamily: T.font, paddingLeft: 4 }}>
+            Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""} to search…
+          </div>
+        )}
+        {search.length >= 3 && (
+          <div style={{ fontSize: 11, color: T.teal, fontWeight: 600, marginTop: 4, fontFamily: T.font, paddingLeft: 4 }}>
+            {filtered.length} result{filtered.length !== 1 ? "s" : ""} found
+          </div>
+        )}
       </div>
 
-      {searchOpen && (
-        <div
-          onClick={() => setSearchOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 80 }}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ background: T.white, borderRadius: 14, padding: "16px 16px 20px", width: "100%", maxWidth: 480, margin: "0 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.muted, marginBottom: 10, fontFamily: T.font }}>Search companies</div>
-            <input
-              ref={searchRef}
-              type="text"
-              autoFocus
-              placeholder="Type at least 3 characters…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${T.teal}`, fontSize: 14, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", boxSizing: "border-box" }}
-            />
-            {search.length > 0 && search.length < 3 && (
-              <div style={{ fontSize: 12, color: T.faint, marginTop: 8, fontFamily: T.font }}>Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""}…</div>
-            )}
-            {search.length >= 3 && (
-              <div style={{ fontSize: 12, color: T.teal, fontWeight: 600, marginTop: 8, fontFamily: T.font }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""} found</div>
-            )}
-            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              <button onClick={() => setSearchOpen(false)} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Apply</button>
-              <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ padding: "10px 14px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Clear</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
+      {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies match your search" icon="🏢" /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
-          {filtered.map(c => (
-            <div
-              key={c.id}
-              onClick={() => setSelected(c)}
-              style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "16px", cursor: "pointer", transition: "border-color 0.15s", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <CompanyLogo c={c} size={44} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                  {c.tagline && <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.tagline}</div>}
+          {filtered.map(c => {
+            const pal = [
+              { bg: "#E6FAF8", color: "#0F6E56" },
+              { bg: "#E6F1FB", color: "#185FA5" },
+              { bg: "#F5F3FF", color: "#534AB7" },
+              { bg: "#FEF3C7", color: "#854F0B" },
+              { bg: "#FAECE7", color: "#993C1D" },
+            ];
+            const pp = pal[(c.name?.charCodeAt(0) || 65) % pal.length];
+            const ini = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+            return (
+              <div key={c.id} onClick={() => setSelected(c)} style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "16px", cursor: "pointer", transition: "border-color 0.15s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  {c.logoURL
+                    ? <img src={c.logoURL} alt={c.name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: "contain", background: "#F3F2EF", flexShrink: 0 }} />
+                    : <div style={{ width: 44, height: 44, borderRadius: 10, background: pp.bg, color: pp.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>{ini}</div>
+                  }
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+                    {c.tagline && <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.tagline}</div>}
+                  </div>
+                </div>
+                {c.about && (
+                  <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, fontFamily: T.font, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {c.about}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {c.industry && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.industry.replace(/_/g, " ")}</span>}
+                  {c.location && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.location}</span>}
+                  {c.size     && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.size}</span>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, paddingTop: 10, borderTop: `0.5px solid ${T.border}` }}>
+                  <span style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>
+                    {c.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—"}
+                  </span>
+                  <span style={{ fontSize: 11, color: T.teal, fontWeight: 600, fontFamily: T.font }}>View profile →</span>
                 </div>
               </div>
-
-              {c.about && (
-                <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, fontFamily: T.font, marginBottom: 10,
-                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {c.about}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {c.industry  && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.industry.replace(/_/g, " ")}</span>}
-                {c.location  && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.location}</span>}
-                {c.size      && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.size}</span>}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, paddingTop: 10, borderTop: `0.5px solid ${T.border}` }}>
-                <span style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>
-                  {c.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—"}
-                </span>
-                <span style={{ fontSize: 11, color: T.teal, fontWeight: 600, fontFamily: T.font }}>View profile →</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1367,7 +1347,7 @@ const NAV = [
   { id: "challenges", label: "Challenges",     icon: Icon.game      },
   { id: "broadcast",  label: "Broadcast",      icon: "📣"           },
   { id: "companies",  label: "Companies",      icon: "🏢"           },
-  { id: "corporate",  label: "Corporate",      icon: "🏛️"           },
+  { id: "corporate",  label: "Corporate",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="17" height="17"><path d="M3 22V9l9-7 9 7v13"/><path d="M9 22V12h6v10"/></svg> },
   { id: "referrals",  label: "Referral Codes", icon: Icon.referral  },
 ];
 
@@ -1414,7 +1394,7 @@ export default function Admin() {
         }
       `}</style>
 
-      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`} style={{ width: 220, background: "#1A2E4A", minHeight: "100vh", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 50, boxShadow: "2px 0 20px rgba(0,0,0,0.15)" }}>
+      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`} style={{ width: 220, background: "#1A2E4A", minHeight: "100vh", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 200, boxShadow: "2px 0 20px rgba(0,0,0,0.15)" }}>
         <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/icon-512.png" alt="ConnektIn" style={{ width: 32, height: 32, borderRadius: 8, background: "#fff", padding: 2 }} />
