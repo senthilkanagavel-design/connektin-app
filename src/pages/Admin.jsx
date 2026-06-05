@@ -1319,7 +1319,7 @@ const NAV = [
   { id: "challenges", label: "Challenges",     icon: Icon.game      },
   { id: "broadcast",  label: "Broadcast",      icon: "📣"           },
   { id: "companies",  label: "Companies",      icon: "🏢"           },
-  { id: "corporate",  label: "Corporate",      icon: "🏛️"           },
+  { id: "corporate",  label: "Corporate",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="17" height="17"><path d="M3 22V9l9-7 9 7v13"/><path d="M9 22V12h6v10"/><path d="M12 2v3"/></svg> },
   { id: "referrals",  label: "Referral Codes", icon: Icon.referral  },
 ];
 
