@@ -1039,10 +1039,12 @@ function CoLogo({ c, size = 48 }) {
 }
 
 function CorporateTab() {
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
-  const [selected, setSelected]   = useState(null);
+  const [companies, setCompanies]   = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState("");
+  const [selected, setSelected]     = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = React.useRef(null);
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "companies")), snap => {
@@ -1054,11 +1056,21 @@ function CorporateTab() {
     return unsub;
   }, []);
 
-  const filtered = companies.filter(c =>
-    !search || c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.industry?.toLowerCase().includes(search.toLowerCase()) ||
-    c.location?.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    if (searchOpen && searchRef.current) {
+      setTimeout(() => searchRef.current.focus(), 50);
+    }
+  }, [searchOpen]);
+
+  const filtered = companies.filter(c => {
+    if (search.length < 3) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.industry?.toLowerCase().includes(q) ||
+      c.location?.toLowerCase().includes(q)
+    );
+  });
 
   function CompanyLogo({ c, size = 48 }) {
     return <CoLogo c={c} size={size} />;
@@ -1133,18 +1145,49 @@ function CorporateTab() {
     );
   }
 
-  // ── Directory view ──
+  // -- Directory view --
   return (
     <div>
-      <SectionHeader title={`Corporate directory (${companies.length})`} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: 0, fontFamily: T.font }}>Corporate directory ({companies.length})</h2>
+        <button
+          onClick={() => setSearchOpen(true)}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font, color: search.length >= 3 ? T.teal : T.muted }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          {search.length >= 3 ? `"${search}"` : "Search"}
+        </button>
+      </div>
 
-      <input
-        type="text"
-        placeholder="Search by name, industry or location…"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, marginBottom: 16, boxSizing: "border-box" }}
-      />
+      {searchOpen && (
+        <div
+          onClick={() => setSearchOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 80 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: T.white, borderRadius: 14, padding: "16px 16px 20px", width: "100%", maxWidth: 480, margin: "0 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.muted, marginBottom: 10, fontFamily: T.font }}>Search companies</div>
+            <input
+              ref={searchRef}
+              type="text"
+              autoFocus
+              placeholder="Type at least 3 characters…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${T.teal}`, fontSize: 14, fontFamily: T.font, outline: "none", background: T.white, boxSizing: "border-box" }}
+            />
+            {search.length > 0 && search.length < 3 && (
+              <div style={{ fontSize: 12, color: T.faint, marginTop: 8, fontFamily: T.font }}>Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""}…</div>
+            )}
+            {search.length >= 3 && (
+              <div style={{ fontSize: 12, color: T.teal, fontWeight: 600, marginTop: 8, fontFamily: T.font }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""} found</div>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button onClick={() => setSearchOpen(false)} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Apply</button>
+              <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ padding: "10px 14px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Clear</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
