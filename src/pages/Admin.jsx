@@ -1142,15 +1142,14 @@ function CorporateTab() {
     <div>
       <SectionHeader title={`Corporate directory (${companies.length})`} />
 
-      <div style={{ position: "relative", marginBottom: 16 }}>
-        <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div style={{ marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search by name, industry or location (3+ chars)…"
+          placeholder="🔍  Search by name, industry or location (3+ chars)…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="corp-search"
-          style={{ width: "100%", padding: "10px 14px 10px 42px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", caretColor: "#0D9488", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", caretColor: "#0D9488", boxSizing: "border-box" }}
         />
         {search.length > 0 && search.length < 3 && (
           <div style={{ fontSize: 11, color: T.faint, marginTop: 4, fontFamily: T.font, paddingLeft: 4 }}>
