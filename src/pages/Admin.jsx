@@ -1143,7 +1143,7 @@ function CorporateTab() {
         placeholder="Search by name, industry or location…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, marginBottom: 16, boxSizing: "border-box", display: "block", pointerEvents: "auto", position: "relative", zIndex: 5, cursor: "text" }}
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, marginBottom: 16, boxSizing: "border-box" }}
       />
 
       {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
@@ -1371,7 +1371,7 @@ export default function Admin() {
         }
       `}</style>
 
-      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`} style={{ width: 220, background: "#1A2E4A", minHeight: "100vh", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 200, boxShadow: "2px 0 20px rgba(0,0,0,0.15)" }}>
+      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`} style={{ width: 220, background: "#1A2E4A", minHeight: "100vh", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 50, boxShadow: "2px 0 20px rgba(0,0,0,0.15)" }}>
         <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/icon-512.png" alt="ConnektIn" style={{ width: 32, height: 32, borderRadius: 8, background: "#fff", padding: 2 }} />
@@ -1402,7 +1402,7 @@ export default function Admin() {
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} />}
 
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
+        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
           <div style={{ flex: 1 }}><span style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font }}>{NAV.find(n => n.id === active)?.label}</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1410,7 +1410,7 @@ export default function Admin() {
             <span style={{ fontSize: 13, color: T.muted, fontFamily: T.font }}>{profile?.displayName || "Admin"}</span>
           </div>
         </div>
-        <div style={{ flex: 1, padding: "24px 24px 40px", isolation: "isolate" }}>{CONTENT[active]}</div>
+        <div style={{ flex: 1, padding: "24px 24px 40px" }}>{CONTENT[active]}</div>
       </div>
 
       <style>{`
