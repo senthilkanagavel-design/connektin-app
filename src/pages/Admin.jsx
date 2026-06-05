@@ -1149,7 +1149,8 @@ function CorporateTab() {
           placeholder="Search by name, industry or location (3+ chars)…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ width: "100%", padding: "10px 14px 10px 36px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#1A1A1A", caretColor: "#0D9488", boxSizing: "border-box" }}
+          className="corp-search"
+          style={{ width: "100%", padding: "10px 14px 10px 42px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", caretColor: "#0D9488", boxSizing: "border-box" }}
         />
         {search.length > 0 && search.length < 3 && (
           <div style={{ fontSize: 11, color: T.faint, marginTop: 4, fontFamily: T.font, paddingLeft: 4 }}>
@@ -1388,6 +1389,8 @@ export default function Admin() {
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.font, display: "flex" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
+        .corp-search { color: #000000 !important; background: #ffffff !important; caret-color: #0D9488 !important; cursor: text !important; }
+        .corp-search::placeholder { color: #9CA3AF !important; }
         @media (max-width: 768px) {
           .admin-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
           .admin-sidebar.open { transform: translateX(0) !important; }
