@@ -1173,7 +1173,7 @@ function CorporateTab() {
               placeholder="Type at least 3 characters…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${T.teal}`, fontSize: 14, fontFamily: T.font, outline: "none", background: T.white, boxSizing: "border-box" }}
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: `1.5px solid ${T.teal}`, fontSize: 14, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", boxSizing: "border-box" }}
             />
             {search.length > 0 && search.length < 3 && (
               <div style={{ fontSize: 12, color: T.faint, marginTop: 8, fontFamily: T.font }}>Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""}…</div>
