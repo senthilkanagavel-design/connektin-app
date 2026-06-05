@@ -1018,6 +1018,26 @@ function BroadcastTab() {
 
 
 // ── CORPORATE TAB ──────────────────────────────────────────────────────────────
+function CoLogo({ c, size = 48 }) {
+  const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const palettes = [
+    { bg: "#E6FAF8", color: "#0F6E56" },
+    { bg: "#E6F1FB", color: "#185FA5" },
+    { bg: "#F5F3FF", color: "#534AB7" },
+    { bg: "#FEF3C7", color: "#854F0B" },
+    { bg: "#FAECE7", color: "#993C1D" },
+  ];
+  const p = palettes[(c.name?.charCodeAt(0) || 65) % palettes.length];
+  if (c.logoURL) return (
+    <img src={c.logoURL} alt={c.name} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: "#F3F2EF", flexShrink: 0 }} />
+  );
+  return (
+    <div style={{ width: size, height: size, borderRadius: 10, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.32), fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>
+      {initials}
+    </div>
+  );
+}
+
 function CorporateTab() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -1041,23 +1061,7 @@ function CorporateTab() {
   );
 
   function CompanyLogo({ c, size = 48 }) {
-    const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-    const palettes = [
-      { bg: "#E6FAF8", color: "#0F6E56" },
-      { bg: "#E6F1FB", color: "#185FA5" },
-      { bg: "#F5F3FF", color: "#534AB7" },
-      { bg: "#FEF3C7", color: "#854F0B" },
-      { bg: "#FAECE7", color: "#993C1D" },
-    ];
-    const p = palettes[(c.name?.charCodeAt(0) || 65) % palettes.length];
-    if (c.logoURL) return (
-      <img src={c.logoURL} alt={c.name} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: "#F3F2EF", flexShrink: 0 }} />
-    );
-    return (
-      <div style={{ width: size, height: size, borderRadius: 10, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.32), fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>
-        {initials}
-      </div>
-    );
+    return <CoLogo c={c} size={size} />;
   }
 
   // ── Profile modal ──
@@ -1135,10 +1139,11 @@ function CorporateTab() {
       <SectionHeader title={`Corporate directory (${companies.length})`} />
 
       <input
+        type="text"
         placeholder="Search by name, industry or location…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, marginBottom: 16, boxSizing: "border-box", position: "relative", zIndex: 2 }}
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, marginBottom: 16, boxSizing: "border-box", display: "block", pointerEvents: "auto", position: "relative", zIndex: 5, cursor: "text" }}
       />
 
       {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
@@ -1405,7 +1410,7 @@ export default function Admin() {
             <span style={{ fontSize: 13, color: T.muted, fontFamily: T.font }}>{profile?.displayName || "Admin"}</span>
           </div>
         </div>
-        <div style={{ flex: 1, padding: "24px 24px 40px", position: "relative", zIndex: 1 }}>{CONTENT[active]}</div>
+        <div style={{ flex: 1, padding: "24px 24px 40px", isolation: "isolate" }}>{CONTENT[active]}</div>
       </div>
 
       <style>{`
