@@ -1145,7 +1145,7 @@ function CorporateTab() {
       <div style={{ marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="🔍  Search by name, industry or location (3+ chars)…"
+          placeholder="Search by name, industry or location (3+ chars)…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="corp-search"
