@@ -19,6 +19,7 @@ import ChatPage from './pages/ChatPage';
 
 // Pages
 import Splash from "./pages/Splash";
+import InvitePage from "./pages/InvitePage";
 import CompanyDashboard from "./pages/CompanyDashboard";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
@@ -91,6 +92,8 @@ export default function App() {
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
         <Route path="/messages/:conversationId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+        <Route path="/invite/:token" element={<InvitePage />} />
+        <Route path="/company/dashboard" element={<PrivateRoute><CompanyDashboard /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
