@@ -31,7 +31,7 @@ import Subscribe from "./pages/Subscribe";
 import Certificate from "./pages/Certificate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
-import OpportunityDetail from "./pages/OpportunityDetail";
+import CompanyProfilePage from "./pages/CompanyProfilePage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -77,7 +77,6 @@ export default function App() {
         <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
         <Route path="/post-job" element={<PrivateRoute><PostJob /></PrivateRoute>} />
         <Route path="/jobs/:jobId" element={<PrivateRoute><JobDetail /></PrivateRoute>} />
-        <Route path="/opportunities/:type/:id" element={<PrivateRoute><OpportunityDetail /></PrivateRoute>} />
         <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
         <Route path="/industry-swap" element={<PrivateRoute><IndustrySwap /></PrivateRoute>} />
         <Route path="/edit-profile" element={<PrivateRoute><EditProfile /></PrivateRoute>} />
@@ -86,7 +85,7 @@ export default function App() {
         <Route path="/wall-of-fame" element={<PrivateRoute><WallOfFamePage /></PrivateRoute>} />
         <Route path="/weekly-game" element={<PrivateRoute><WeeklyGamePage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-        <Route path="/company/:companyId" element={<PrivateRoute><CompanyDetailPage /></PrivateRoute>} />
+        <Route path="/company/:companyId" element={<PrivateRoute><CompanyProfilePage /></PrivateRoute>} />
         <Route path="/login/email"  element={<PublicRoute><EmailLogin /></PublicRoute>} />
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
