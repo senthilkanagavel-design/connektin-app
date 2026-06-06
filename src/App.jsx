@@ -19,8 +19,6 @@ import ChatPage from './pages/ChatPage';
 
 // Pages
 import Splash from "./pages/Splash";
-import InvitePage from "./pages/InvitePage";
-import CompanyDashboard from "./pages/CompanyDashboard";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import EmailLogin from "./pages/EmailLogin";
@@ -33,6 +31,9 @@ import Subscribe from "./pages/Subscribe";
 import Certificate from "./pages/Certificate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
+import CompanyProfilePage from "./pages/CompanyProfilePage";
+import InvitePage from "./pages/InvitePage";
+import CompanyDashboard from "./pages/CompanyDashboard";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -87,7 +88,7 @@ export default function App() {
         <Route path="/wall-of-fame" element={<PrivateRoute><WallOfFamePage /></PrivateRoute>} />
         <Route path="/weekly-game" element={<PrivateRoute><WeeklyGamePage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-        <Route path="/company/:companyId" element={<PrivateRoute><CompanyDetailPage /></PrivateRoute>} />
+        <Route path="/company/:companyId" element={<PrivateRoute><CompanyProfilePage /></PrivateRoute>} />
         <Route path="/login/email"  element={<PublicRoute><EmailLogin /></PublicRoute>} />
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
