@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase/config';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const T = {
@@ -290,7 +290,6 @@ export default function InvitePage() {
       await updateProfile(userCred.user, { displayName: company.name });
 
       // 3. Create user doc in Firestore
-      const { setDoc } = await import('firebase/firestore');
       await setDoc(doc(db, 'users', uid), {
         uid,
         displayName: company.name,
