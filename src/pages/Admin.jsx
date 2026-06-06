@@ -1229,7 +1229,7 @@ export default function Admin() {
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 16px", position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", height: 56, gap: 10 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
-          <button onClick={() => navigate(-1)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.muted, fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "6px 10px", borderRadius: 8, flexShrink: 0 }}>
+          <button onClick={() => navigate('/dashboard', { state: { tab: 'profile' } })} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.muted, fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "6px 10px", borderRadius: 8, flexShrink: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
