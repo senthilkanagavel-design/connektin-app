@@ -1019,19 +1019,6 @@ function BroadcastTab() {
 
 
 // ── CORPORATE TAB ─────────────────────────────────────────────────────────────
-const INDUSTRIES = [
-  { value: "information_technology", label: "Information Technology" },
-  { value: "banking_finance",        label: "Banking & Finance" },
-  { value: "healthcare",             label: "Healthcare" },
-  { value: "education",              label: "Education" },
-  { value: "manufacturing",          label: "Manufacturing" },
-  { value: "media_entertainment",    label: "Media & Entertainment" },
-  { value: "real_estate",            label: "Real Estate" },
-  { value: "hospitality_travel",     label: "Hospitality & Travel" },
-  { value: "medical_billing",        label: "Medical Billing" },
-  { value: "medical_coding",         label: "Medical Coding" },
-  { value: "other",                  label: "Other" },
-];
 
 const COMPANY_SIZES = ["1–10", "10–50", "50–200", "200–500", "500+"];
 
