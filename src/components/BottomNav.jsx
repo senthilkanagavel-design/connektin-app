@@ -38,8 +38,8 @@ const NAV_ITEMS = [
     ),
   },
   {
-    id: 'jobs',
-    label: 'Jobs',
+    id: 'opportunities',
+    label: 'Opps',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"
