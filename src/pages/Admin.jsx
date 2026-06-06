@@ -1017,6 +1017,183 @@ function BroadcastTab() {
 }
 
 
+function CoLogo({ c, size = 48 }) {
+  const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const palettes = [
+    { bg: "#E6FAF8", color: "#0F6E56" },
+    { bg: "#E6F1FB", color: "#185FA5" },
+    { bg: "#F5F3FF", color: "#534AB7" },
+    { bg: "#FEF3C7", color: "#854F0B" },
+    { bg: "#FAECE7", color: "#993C1D" },
+  ];
+  const p = palettes[(c.name?.charCodeAt(0) || 65) % palettes.length];
+  if (c.logoURL) return (
+    <img src={c.logoURL} alt={c.name} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", background: "#F3F2EF", flexShrink: 0 }} />
+  );
+  return (
+    <div style={{ width: size, height: size, borderRadius: 10, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.32), fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>
+      {initials}
+    </div>
+  );
+}
+
+function CorporateTab() {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
+  const [selected, setSelected]   = useState(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(query(collection(db, "companies")), snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      setCompanies(list);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  const filtered = companies.filter(c => {
+    if (!search || search.length < 3) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.industry?.toLowerCase().includes(q) ||
+      c.location?.toLowerCase().includes(q)
+    );
+  });
+
+  if (selected) {
+    const co = selected;
+    const palettes = [
+      { bg: "#E6FAF8", color: "#0F6E56" },
+      { bg: "#E6F1FB", color: "#185FA5" },
+      { bg: "#F5F3FF", color: "#534AB7" },
+      { bg: "#FEF3C7", color: "#854F0B" },
+      { bg: "#FAECE7", color: "#993C1D" },
+    ];
+    const p = palettes[(co.name?.charCodeAt(0) || 65) % palettes.length];
+    const initials = (co.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+    return (
+      <div>
+        <button onClick={() => setSelected(null)} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, background: "none", border: "none", color: T.teal, fontFamily: T.font, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+          {Icon.back} Back to directory
+        </button>
+        <div style={{ background: T.white, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden", maxWidth: 560 }}>
+          <div style={{ background: "#0A1628", padding: "20px 20px 0", display: "flex", alignItems: "flex-end", gap: 16 }}>
+            <div style={{ marginBottom: -16, flexShrink: 0 }}>
+              <div style={{ border: "3px solid #fff", borderRadius: 12, overflow: "hidden" }}>
+                {co.logoURL
+                  ? <img src={co.logoURL} alt={co.name} style={{ width: 64, height: 64, objectFit: "contain" }} />
+                  : <div style={{ width: 64, height: 64, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, fontFamily: T.font }}>{initials}</div>
+                }
+              </div>
+            </div>
+            <div style={{ paddingBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: T.font, lineHeight: 1.2 }}>{co.name}</div>
+              {co.tagline && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: T.font, marginTop: 3 }}>{co.tagline}</div>}
+            </div>
+          </div>
+          <div style={{ padding: "28px 20px 20px" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              {co.industry && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>{co.industry.replace(/_/g, " ")}</span>}
+              {co.location && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📍 {co.location}</span>}
+              {co.size     && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>👥 {co.size}</span>}
+              {co.founded  && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📅 Est. {co.founded}</span>}
+            </div>
+            {co.about && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6, fontFamily: T.font }}>About</div>
+                <div style={{ fontSize: 13, color: T.text, lineHeight: 1.7, fontFamily: T.font }}>{co.about}</div>
+              </div>
+            )}
+            <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, fontFamily: T.font }}>Details</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { label: "Website",    value: co.website },
+                  { label: "Location",   value: co.location },
+                  { label: "Team size",  value: co.size },
+                  { label: "Founded",    value: co.founded },
+                  { label: "Industry",   value: co.industry?.replace(/_/g, " ") },
+                  { label: "Followers",  value: co.followers?.length ?? 0 },
+                  { label: "Registered", value: co.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—" },
+                ].filter(d => d.value !== undefined && d.value !== null && d.value !== "").map(d => (
+                  <div key={d.label} style={{ background: "#F6F8FA", borderRadius: 8, padding: "9px 12px" }}>
+                    <div style={{ fontSize: 10, color: T.faint, fontFamily: T.font, marginBottom: 2 }}>{d.label}</div>
+                    {d.label === "Website"
+                      ? <a href={d.value} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: T.teal, fontFamily: T.font, wordBreak: "break-all" }}>{d.value}</a>
+                      : <div style={{ fontSize: 12, fontWeight: 600, color: T.text, fontFamily: T.font }}>{String(d.value)}</div>
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <SectionHeader title={`Corporate directory (${companies.length})`} />
+      <div style={{ marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Search by name, industry or location (3+ chars)…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="corp-search"
+          style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", caretColor: "#0D9488", cursor: "text", boxSizing: "border-box" }}
+        />
+        {search.length > 0 && search.length < 3 && (
+          <div style={{ fontSize: 11, color: T.faint, marginTop: 4, fontFamily: T.font }}>Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""} to search…</div>
+        )}
+        {search.length >= 3 && (
+          <div style={{ fontSize: 11, color: T.teal, fontWeight: 600, marginTop: 4, fontFamily: T.font }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""} found</div>
+        )}
+      </div>
+      {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+          {filtered.map(co => {
+            const pal = [{ bg: "#E6FAF8", color: "#0F6E56" }, { bg: "#E6F1FB", color: "#185FA5" }, { bg: "#F5F3FF", color: "#534AB7" }, { bg: "#FEF3C7", color: "#854F0B" }, { bg: "#FAECE7", color: "#993C1D" }];
+            const pp = pal[(co.name?.charCodeAt(0) || 65) % pal.length];
+            const ini = (co.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+            return (
+              <div key={co.id} onClick={() => setSelected(co)} style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: 16, cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  {co.logoURL
+                    ? <img src={co.logoURL} alt={co.name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: "contain", flexShrink: 0 }} />
+                    : <div style={{ width: 44, height: 44, borderRadius: 10, background: pp.bg, color: pp.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>{ini}</div>
+                  }
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.name}</div>
+                    {co.tagline && <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{co.tagline}</div>}
+                  </div>
+                </div>
+                {co.about && (
+                  <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, fontFamily: T.font, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{co.about}</div>
+                )}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {co.industry && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{co.industry.replace(/_/g, " ")}</span>}
+                  {co.location && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{co.location}</span>}
+                  {co.size     && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{co.size}</span>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, paddingTop: 10, borderTop: `0.5px solid ${T.border}` }}>
+                  <span style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>{co.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—"}</span>
+                  <span style={{ fontSize: 11, color: T.teal, fontWeight: 600, fontFamily: T.font }}>View profile →</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function CompaniesAdminTab() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -1151,6 +1328,7 @@ const NAV = [
   { id: "challenges", label: "Challenges",     icon: Icon.game      },
   { id: "broadcast",  label: "Broadcast",      icon: "📣"           },
   { id: "companies",  label: "Companies",      icon: "🏢"           },
+  { id: "corporate",  label: "Corporate",      icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="17" height="17"><path d="M3 22V9l9-7 9 7v13"/><path d="M9 22V12h6v10"/></svg> },
   { id: "referrals",  label: "Referral Codes", icon: Icon.referral  },
 ];
 
@@ -1184,12 +1362,15 @@ export default function Admin() {
     referrals:  <ReferralCodesAdmin />,
     broadcast:  <BroadcastTab />,
     companies:  <CompaniesAdminTab />,
+    corporate:  <CorporateTab />,
   };
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.font, display: "flex" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
+        .corp-search { color: #000000 !important; background: #ffffff !important; caret-color: #0D9488 !important; cursor: text !important; }
+        .corp-search::placeholder { color: #9CA3AF !important; }
         @media (max-width: 768px) {
           .admin-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
           .admin-sidebar.open { transform: translateX(0) !important; }
@@ -1227,9 +1408,9 @@ export default function Admin() {
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} />}
 
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 16px", position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", height: 56, gap: 10 }}>
+        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 16px", position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
-          <button onClick={() => navigate('/dashboard', { state: { tab: 'profile' } })} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.muted, fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "6px 10px", borderRadius: 8, flexShrink: 0 }}>
+          <button onClick={() => navigate("/dashboard", { state: { tab: "profile" } })} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.muted, fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "6px 10px", borderRadius: 8, flexShrink: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
