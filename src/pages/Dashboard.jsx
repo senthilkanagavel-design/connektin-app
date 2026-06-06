@@ -12,6 +12,7 @@ import ArticlesTab from './tabs/ArticlesTab';
 import JobsTab from './tabs/JobsTab';
 import PostsTab from './tabs/PostsTab';
 import ProfileTab from './tabs/ProfileTab';
+import OpportunitiesTab from './tabs/OpportunitiesTab';
 import CompaniesTab from './tabs/CompaniesTab';
 
 const INDUSTRY_LABELS = {
@@ -396,8 +397,8 @@ export default function Dashboard() {
     home:     HomeTab,
     posts:    PostsTab,
     articles: ArticlesTab,
-    jobs:     JobsTab,
-    companies: CompaniesTab,
+    opportunities: OpportunitiesTab,
+    companies:     CompaniesTab,
     profile:  ProfileTab,
   };
   const ActiveComponent = tabComponents[activeTab] || HomeTab;
