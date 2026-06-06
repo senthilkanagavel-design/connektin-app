@@ -19,7 +19,7 @@ import ChatPage from './pages/ChatPage';
 
 // Pages
 import Splash from "./pages/Splash";
-import InvitePage from "./pages/InvitePage";
+import CompanyDashboard from "./pages/CompanyDashboard";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import EmailLogin from "./pages/EmailLogin";
@@ -47,6 +47,7 @@ function DashboardRoute({ children }) {
   if (!profile.onboardingDone) return <Navigate to="/onboarding" replace />;
   if (!profile.onboardingComplete) return <Navigate to="/industry-select" replace />;
   if (!profile.userType) return <Navigate to="/role-select" replace />;
+  if (profile.userType === "company") return <Navigate to="/company/dashboard" replace />;
   if (profile.userType === "seeker" && !profile.plan) return <Navigate to="/plan-select" replace />;
   return children;
 }
@@ -90,7 +91,6 @@ export default function App() {
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
         <Route path="/messages/:conversationId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
-        <Route path="/invite/:token" element={<InvitePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
