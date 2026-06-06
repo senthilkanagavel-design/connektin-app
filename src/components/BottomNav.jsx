@@ -38,15 +38,23 @@ const NAV_ITEMS = [
     ),
   },
   {
-    id: 'opportunities',
-    label: 'Opps',
+    id: 'jobs',
+    label: 'Jobs',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"
           fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
-        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-        <line x1="12" y1="12" x2="12" y2="16" />
-        <line x1="10" y1="14" x2="14" y2="14" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    ),
+  },
+  {
+    id: 'companies',
+    label: 'Companies',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 22V9l9-7 9 7v13" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <path d="M9 22V12h6v10" />
       </svg>
     ),
   },
@@ -65,6 +73,7 @@ const NAV_ITEMS = [
 export default function BottomNav({ activeTab, setActiveTab }) {
   function handleTabClick(id) {
     setActiveTab(id);
+    // Scroll to top on every tab switch
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
