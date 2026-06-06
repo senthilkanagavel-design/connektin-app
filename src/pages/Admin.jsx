@@ -1096,11 +1096,11 @@ function AddCompanyModal({ onClose, onAdded }) {
         logoURL,
         status:      "invited",
         inviteToken: token,
-        inviteLink:  `https://connektin.in/invite/${token}`,
+        inviteLink:  `${window.location.origin}/invite/${token}`,
         followers:   [],
         createdAt:   serverTimestamp(),
       });
-      onAdded({ id: companyRef.id, ...form, logoURL, status: "invited", inviteToken: token, inviteLink: `https://connektin.in/invite/${token}` });
+      onAdded({ id: companyRef.id, ...form, logoURL, status: "invited", inviteToken: token, inviteLink: `${window.location.origin}/invite/${token}` });
     } catch (err) {
       console.error("Add company error:", err);
       setError("Something went wrong. Please try again.");
