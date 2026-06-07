@@ -21,7 +21,7 @@ jobs:
         working-directory: CONNEKTIN-PHASE2
 
       - name: Build
-        run: npx vite build
+        run: npx vite build --mode staging
         working-directory: CONNEKTIN-PHASE2
 
       - name: Install Firebase Tools
