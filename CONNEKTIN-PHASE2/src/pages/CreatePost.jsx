@@ -2,7 +2,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import { addSignal, SIGNAL_POINTS } from "../utils/signal";
 import CommunityGuidelinesBar from "../components/CommunityGuidelinesBar";
@@ -32,8 +33,9 @@ export default function CreatePost() {
   const [text, setText]                 = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [customTag, setCustomTag]       = useState("");
-  const [imageBase64, setImageBase64]   = useState(null);
+  const [imageFile, setImageFile]       = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [submitting, setSubmitting]     = useState(false);
   const [error, setError]               = useState("");
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -53,12 +55,12 @@ export default function CreatePost() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) { setError(`Image too large. Max ${MAX_IMAGE_SIZE_MB}MB.`); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => { setImageBase64(ev.target.result); setImagePreview(ev.target.result); setError(""); };
-    reader.readAsDataURL(file);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setError("");
   };
 
-  const removeImage = () => { setImageBase64(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
+  const removeImage = () => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; };
   const toggleTag = (tag) => setSelectedTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
   const addCustomTag = () => {
     const clean = customTag.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -68,30 +70,47 @@ export default function CreatePost() {
   };
 
   const handleSubmit = async () => {
-    if (!text.trim() && !imageBase64) { setError("Write something or add an image before posting."); return; }
+    if (!text.trim() && !imageFile) { setError("Write something or add an image before posting."); return; }
     if (text.length > MAX_CHARS) { setError(`Post exceeds ${MAX_CHARS} characters.`); return; }
 
-    // Catch trial users — show upgrade prompt instead of Firestore rejection
     if (isTrial) { setShowUpgradePrompt(true); return; }
 
     setSubmitting(true); setError("");
     try {
+      let imageUrl = null;
+
+      // Upload image to Firebase Storage if present
+      if (imageFile) {
+        const path = `posts/${user.uid}/${Date.now()}_${imageFile.name}`;
+        const storageRef = ref(storage, path);
+        const task = uploadBytesResumable(storageRef, imageFile);
+        await new Promise((resolve, reject) => {
+          task.on('state_changed',
+            (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+            reject,
+            resolve
+          );
+        });
+        setUploadProgress(null);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
       await addDoc(collection(db, "posts"), {
         uid: user.uid,
         name: profile?.displayName || "User",
         photo: profile?.photoURL || null,
         text: text.trim(),
-        image: imageBase64 || null,
+        image: imageUrl,
         tags: selectedTags,
         industry,
         likedBy: [],
         commentCount: 0,
         ts: serverTimestamp(),
       });
-      // Signal: post creator earns for creating a post
       await addSignal(user.uid, SIGNAL_POINTS.POST_CREATED);
       navigate("/dashboard", { replace: true });
     } catch (e) {
+      setUploadProgress(null);
       if (e?.code === "permission-denied") {
         setShowUpgradePrompt(true);
       } else {
@@ -131,9 +150,9 @@ export default function CreatePost() {
         <button style={s.cancelBtn} onClick={() => navigate('/dashboard', { state: { tab: 'posts' } })}>Cancel</button>
         <span style={s.headerTitle}>Create Post</span>
         <button
-          style={{ ...s.postBtn, opacity: (!text.trim() && !imageBase64) || submitting ? 0.4 : 1, cursor: (!text.trim() && !imageBase64) || submitting ? "not-allowed" : "pointer" }}
+          style={{ ...s.postBtn, opacity: (!text.trim() && !imageFile) || submitting ? 0.4 : 1, cursor: (!text.trim() && !imageFile) || submitting ? "not-allowed" : "pointer" }}
           onClick={handleSubmit}
-          disabled={(!text.trim() && !imageBase64) || submitting}
+          disabled={(!text.trim() && !imageFile) || submitting}
         >
           {submitting ? "Posting…" : "Post"}
         </button>
@@ -180,13 +199,20 @@ export default function CreatePost() {
             <span style={s.toolbarBtnLabel}>Photo</span>
           </button>
           <div style={s.toolbarDivider} />
-          <span style={s.toolbarHint}>{imageBase64 ? "✅ Image attached" : "Max 1.5MB · JPG, PNG, WEBP"}</span>
-          {imageBase64 && <button style={s.removeImageBtnInline} onClick={removeImage}>Remove</button>}
+          <span style={s.toolbarHint}>{imageFile ? "✅ Image attached" : "Max 1.5MB · JPG, PNG, WEBP"}</span>
+          {imageFile && <button style={s.removeImageBtnInline} onClick={removeImage}>Remove</button>}
         </div>
 
         <div style={{ ...s.charCount, color: charsLeft < 80 ? (charsLeft < 20 ? "#B91C1C" : "#D97706") : "#999" }}>
           {charsLeft < 200 ? `${charsLeft} characters left` : ""}
         </div>
+
+        {uploadProgress !== null && (
+          <div style={{ background: '#E1F5EE', borderRadius: 8, overflow: 'hidden', marginBottom: 8, height: 28, position: 'relative', display: 'flex', alignItems: 'center', paddingLeft: 12 }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${uploadProgress}%`, background: '#0D9488', opacity: 0.25, transition: 'width 0.3s' }} />
+            <span style={{ fontSize: 12, color: '#0D9488', fontWeight: 600, zIndex: 1 }}>Uploading image… {uploadProgress}%</span>
+          </div>
+        )}
 
         {error && <div style={s.error}>{error}</div>}
 
