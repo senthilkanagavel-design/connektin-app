@@ -8,8 +8,7 @@ const NAV_ITEMS = [
     label: 'Home',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z"
-          fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
       </svg>
     ),
   },
@@ -18,8 +17,7 @@ const NAV_ITEMS = [
     label: 'Posts',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-          fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
       </svg>
     ),
   },
@@ -28,8 +26,7 @@ const NAV_ITEMS = [
     label: 'Articles',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-          fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" />
         <line x1="16" y1="17" x2="8" y2="17" />
@@ -38,13 +35,22 @@ const NAV_ITEMS = [
     ),
   },
   {
-    id: 'jobs',
-    label: 'Jobs',
+    id: 'opportunities',
+    label: 'Opps',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"
-          fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    ),
+  },
+  {
+    id: 'companies',
+    label: 'Companies',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? TEAL : '#9CA3AF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill={active ? 'rgba(13,148,136,0.12)' : 'none'} />
+        <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
   },
@@ -63,7 +69,6 @@ const NAV_ITEMS = [
 export default function BottomNav({ activeTab, setActiveTab }) {
   function handleTabClick(id) {
     setActiveTab(id);
-    // Scroll to top on every tab switch
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -120,15 +125,9 @@ export default function BottomNav({ activeTab, setActiveTab }) {
               onClick={() => handleTabClick(item.id)}
               aria-label={item.label}
             >
-              <span
-                className="nav-dot"
-                style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'scale(1)' : 'scale(0)' }}
-              />
+              <span className="nav-dot" style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'scale(1)' : 'scale(0)' }} />
               <span className="nav-icon">{item.icon(isActive)}</span>
-              <span
-                className="nav-label"
-                style={{ color: isActive ? '#0D9488' : '#9CA3AF' }}
-              >
+              <span className="nav-label" style={{ color: isActive ? '#0D9488' : '#9CA3AF' }}>
                 {item.label}
               </span>
             </button>
