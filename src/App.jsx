@@ -14,6 +14,7 @@ import MyCirclePage from './pages/MyCirclePage';
 import WallOfFamePage from './pages/WallOfFamePage';
 import WeeklyGamePage from './pages/WeeklyGamePage';
 import Settings from './pages/Settings';
+import PrivacySecurity from './pages/PrivacySecurity';
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 
@@ -88,8 +89,9 @@ export default function App() {
         <Route path="/wall-of-fame" element={<PrivateRoute><WallOfFamePage /></PrivateRoute>} />
         <Route path="/weekly-game" element={<PrivateRoute><WeeklyGamePage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+        <Route path="/privacy-security" element={<PrivateRoute><PrivacySecurity /></PrivateRoute>} />
         <Route path="/company/:companyId" element={<PrivateRoute><CompanyProfilePage /></PrivateRoute>} />
-        <Route path="/login/email"  element={<PublicRoute><EmailLogin /></PublicRoute>} />
+        <Route path="/login/email" element={<PublicRoute><EmailLogin /></PublicRoute>} />
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
         <Route path="/messages/:conversationId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
