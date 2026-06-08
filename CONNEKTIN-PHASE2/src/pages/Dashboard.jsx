@@ -12,6 +12,8 @@ import ArticlesTab from './tabs/ArticlesTab';
 import JobsTab from './tabs/JobsTab';
 import PostsTab from './tabs/PostsTab';
 import ProfileTab from './tabs/ProfileTab';
+import OpportunitiesTab from './tabs/OpportunitiesTab';
+import CompaniesTab from './tabs/CompaniesTab';
 
 const INDUSTRY_LABELS = {
   medical_billing:        'Medical Billing',
@@ -113,7 +115,6 @@ function getDaysLeft(createdAt) {
   return Math.max(0, diff);
 }
 
-// ── Avatar — profile photo or initials fallback ──────────────────
 function UserAvatar({ userData, size = 32, onClick }) {
   const photoURL    = userData?.photoURL;
   const displayName = userData?.displayName || '';
@@ -151,7 +152,6 @@ function UserAvatar({ userData, size = 32, onClick }) {
   );
 }
 
-// ── Quick Access Sheet — own profile ─────────────────────────────
 function QuickAccessSheet({ userData, onClose, navigate, isTrial, daysLeft }) {
   const displayName = userData?.displayName || 'User';
   const email       = userData?.email || '';
@@ -202,17 +202,9 @@ function QuickAccessSheet({ userData, onClose, navigate, isTrial, daysLeft }) {
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200 }}
-      />
-      {/* Sheet */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200 }} />
       <div style={qs.sheet}>
-        {/* Handle */}
         <div style={qs.handle} />
-
-        {/* Profile summary */}
         <div style={qs.profileRow}>
           <UserAvatar userData={userData} size={48} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -223,10 +215,7 @@ function QuickAccessSheet({ userData, onClose, navigate, isTrial, daysLeft }) {
             </div>
           </div>
         </div>
-
         <div style={qs.divider} />
-
-        {/* Menu items */}
         {menuItems.map((item, i) => (
           <div key={i} style={qs.menuItem} onClick={item.onClick}>
             <div style={{ ...qs.menuIcon, background: item.iconBg }}>
@@ -239,10 +228,7 @@ function QuickAccessSheet({ userData, onClose, navigate, isTrial, daysLeft }) {
             <span style={qs.menuArrow}>›</span>
           </div>
         ))}
-
         <div style={qs.divider} />
-
-        {/* Sign out */}
         <div style={qs.menuItem} onClick={handleLogout}>
           <div style={{ ...qs.menuIcon, background: '#FEF2F2' }}>
             <span style={{ fontSize: 16 }}>🚪</span>
@@ -257,7 +243,6 @@ function QuickAccessSheet({ userData, onClose, navigate, isTrial, daysLeft }) {
   );
 }
 
-// ── Top Bar ───────────────────────────────────────────────────────
 function TopBar({ isTrial, daysLeft, onUpgrade, userData, activeTab, onAvatarClick }) {
   const role     = userData?.role || 'participant';
   const isAdmin  = role === 'admin';
@@ -286,7 +271,6 @@ function TopBar({ isTrial, daysLeft, onUpgrade, userData, activeTab, onAvatarCli
             <PulseButton />
             <div style={tb.bellDot} />
           </div>
-          {/* Tappable avatar */}
           <UserAvatar userData={userData} size={32} onClick={onAvatarClick} />
         </div>
       </div>
@@ -313,13 +297,12 @@ function TopBar({ isTrial, daysLeft, onUpgrade, userData, activeTab, onAvatarCli
   );
 }
 
-// ── Dashboard ─────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, profile: authProfile } = useAuth();
   const location = useLocation();
-  const [activeTab,     setActiveTab]     = useState(location.state?.tab || 'home');
-  const [userData,      setUserData]      = useState(null);
-  const [loading,       setLoading]       = useState(true);
+  const [activeTab,      setActiveTab]      = useState(location.state?.tab || 'home');
+  const [userData,       setUserData]       = useState(null);
+  const [loading,        setLoading]        = useState(true);
   const [quickSheetOpen, setQuickSheetOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -355,7 +338,6 @@ export default function Dashboard() {
   const isExpiredTrial = isTrial && daysLeft === 0;
   const topPadding = isTrial ? '94px' : '56px';
 
-  // Full block for expired trial
   if (isExpiredTrial) {
     return (
       <div style={{ minHeight: '100dvh', background: '#F3F2EF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px', fontFamily: "'DM Sans', sans-serif" }}>
@@ -392,11 +374,13 @@ export default function Dashboard() {
   }
 
   const tabComponents = {
-    home:     HomeTab,
-    posts:    PostsTab,
-    articles: ArticlesTab,
-    jobs:     JobsTab,
-    profile:  ProfileTab,
+    home:          HomeTab,
+    posts:         PostsTab,
+    articles:      ArticlesTab,
+    jobs:          JobsTab,
+    opportunities: OpportunitiesTab,
+    companies:     CompaniesTab,
+    profile:       ProfileTab,
   };
   const ActiveComponent = tabComponents[activeTab] || HomeTab;
 
@@ -422,7 +406,6 @@ export default function Dashboard() {
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Quick access sheet */}
       {quickSheetOpen && (
         <QuickAccessSheet
           userData={effectiveUserData}
@@ -436,7 +419,6 @@ export default function Dashboard() {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────
 const tb = {
   wrap: { position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99 },
   bar: {
@@ -471,29 +453,13 @@ const qs = {
     fontFamily: 'DM Sans, sans-serif',
   },
   handle: { width: 36, height: 3, background: '#E4E2DC', borderRadius: 2, margin: '12px auto 0' },
-  profileRow: {
-    display: 'flex', alignItems: 'center', gap: 14,
-    padding: '16px 20px 14px',
-  },
+  profileRow: { display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px 14px' },
   name:     { fontSize: 16, fontWeight: 700, color: '#0A1628', letterSpacing: '-0.3px' },
   industry: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
-  planPill: {
-    display: 'inline-flex', alignItems: 'center', gap: 4,
-    borderRadius: 20, padding: '3px 10px',
-    fontSize: 10, fontWeight: 700,
-    marginTop: 6,
-  },
+  planPill: { display: 'inline-flex', alignItems: 'center', gap: 4, borderRadius: 20, padding: '3px 10px', fontSize: 10, fontWeight: 700, marginTop: 6 },
   divider: { height: 1, background: '#F3F2EF', margin: '2px 0' },
-  menuItem: {
-    display: 'flex', alignItems: 'center', gap: 14,
-    padding: '13px 20px',
-    cursor: 'pointer',
-  },
-  menuIcon: {
-    width: 38, height: 38, borderRadius: 10,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
+  menuItem: { display: 'flex', alignItems: 'center', gap: 14, padding: '13px 20px', cursor: 'pointer' },
+  menuIcon: { width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   menuTitle: { fontSize: 14, fontWeight: 600, color: '#0A1628' },
   menuSub:   { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
   menuArrow: { fontSize: 20, color: '#D1D5DB', lineHeight: 1 },
