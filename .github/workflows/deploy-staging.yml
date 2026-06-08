@@ -1,29 +1,25 @@
 name: Deploy to Staging
-
 on:
   push:
     branches:
       - staging
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CONNEKTIN-PHASE2
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build
         run: ./node_modules/.bin/vite build
-
       - name: Install Firebase Tools
         run: npm install -g firebase-tools
-
       - name: Deploy to Firebase Staging
         run: firebase deploy --only hosting --project connektin-staging --token "${{ secrets.FIREBASE_TOKEN }}"
