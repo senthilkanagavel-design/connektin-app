@@ -10,10 +10,10 @@ import PulseButton from '../components/PulseButton';
 import HomeTab from './tabs/HomeTab';
 import ArticlesTab from './tabs/ArticlesTab';
 import JobsTab from './tabs/JobsTab';
-import PostsTab from './tabs/PostsTab';
-import ProfileTab from './tabs/ProfileTab';
 import OpportunitiesTab from './tabs/OpportunitiesTab';
 import CompaniesTab from './tabs/CompaniesTab';
+import PostsTab from './tabs/PostsTab';
+import ProfileTab from './tabs/ProfileTab';
 
 const INDUSTRY_LABELS = {
   medical_billing:        'Medical Billing',
@@ -397,6 +397,7 @@ export default function Dashboard() {
     home:     HomeTab,
     posts:    PostsTab,
     articles: ArticlesTab,
+    jobs:          JobsTab,
     opportunities: OpportunitiesTab,
     companies:     CompaniesTab,
     profile:  ProfileTab,
