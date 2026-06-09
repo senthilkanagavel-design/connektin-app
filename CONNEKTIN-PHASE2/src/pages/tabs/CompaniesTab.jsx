@@ -5,8 +5,21 @@ import { db } from "../../firebase/config";
 import { collection, query, onSnapshot } from "firebase/firestore";
 
 export default function CompaniesTab() {
+  return (
+    <div
+      style={{
+        padding: "40px",
+        textAlign: "center",
+        fontSize: "24px",
+        fontWeight: "bold"
+      }}
+    >
+      COMPANIES TEST SCREEN
+    </div>
+  );
+
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
