@@ -1229,6 +1229,11 @@ export default function Admin() {
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
+          <button onClick={() => navigate("/dashboard", { state: { tab: "profile" } })} style={{ display: "flex", alignItems: "center", gap: 6, background: T.navy, color: T.white, border: "none", cursor: "pointer", fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "7px 14px", borderRadius: 8, flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <div style={{ width: 1, height: 20, background: T.border, flexShrink: 0 }} />
           <div style={{ flex: 1 }}><span style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font }}>{NAV.find(n => n.id === active)?.label}</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.teal }} />
