@@ -466,7 +466,7 @@ function SettingsSheet({ onClose, isLocked, onUpgrade, navigate }) {
     { icon: <EditIcon />,     label: 'Edit Profile',    sub: 'Update name and bio',     onClick: () => { onClose(); navigate('/edit-profile'); } },
     { icon: <IndustryIcon />, label: 'Change Industry', sub: 'Free swap every 90 days', locked: isLocked, onClick: () => { if (!isLocked) { onClose(); navigate('/industry-swap'); } } },
     { icon: <BellIcon />,     label: 'Notifications',   sub: 'Manage alerts',           onClick: () => {} },
-    { icon: <ShieldIcon />,   label: 'Privacy',         sub: 'Data & visibility',       onClick: () => { onClose(); navigate('/privacy'); } },
+    { icon: <ShieldIcon />,   label: 'Privacy & Security', sub: 'Manage your data and security',       onClick: () => { onClose(); navigate('/privacy-security'); } },
     { icon: <HelpIcon />,     label: 'Help & Support',  sub: 'FAQs and contact',        onClick: () => {} },
   ];
   return (
