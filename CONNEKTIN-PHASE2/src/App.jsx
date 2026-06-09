@@ -14,7 +14,7 @@ import MyCirclePage from './pages/MyCirclePage';
 import WallOfFamePage from './pages/WallOfFamePage';
 import WeeklyGamePage from './pages/WeeklyGamePage';
 import Settings from './pages/Settings';
-import PrivacySecurity from './pages/PrivacySecurity';
+import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 
 // Pages
@@ -31,6 +31,9 @@ import Subscribe from "./pages/Subscribe";
 import Certificate from "./pages/Certificate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
+import InvitePage from "./pages/InvitePage";
+import CompanyDashboard from "./pages/CompanyDashboard";
+import CompanyProfilePage from "./pages/CompanyProfilePage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -46,6 +49,7 @@ function DashboardRoute({ children }) {
   if (!profile.onboardingDone) return <Navigate to="/onboarding" replace />;
   if (!profile.onboardingComplete) return <Navigate to="/industry-select" replace />;
   if (!profile.userType) return <Navigate to="/role-select" replace />;
+  if (profile.userType === "company") return <Navigate to="/company/dashboard" replace />;
   if (profile.userType === "seeker" && !profile.plan) return <Navigate to="/plan-select" replace />;
   return children;
 }
@@ -84,11 +88,14 @@ export default function App() {
         <Route path="/wall-of-fame" element={<PrivateRoute><WallOfFamePage /></PrivateRoute>} />
         <Route path="/weekly-game" element={<PrivateRoute><WeeklyGamePage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-        <Route path="/privacy-security" element={<PrivateRoute><PrivacySecurity /></PrivateRoute>} />
         <Route path="/company/:companyId" element={<PrivateRoute><CompanyDetailPage /></PrivateRoute>} />
-        <Route path="/login/email" element={<PublicRoute><EmailLogin /></PublicRoute>} />
+        <Route path="/login/email"  element={<PublicRoute><EmailLogin /></PublicRoute>} />
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
-        <Route path="/chat/:conversationId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+        <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+        <Route path="/messages/:conversationId" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
+        <Route path="/invite/:token" element={<InvitePage />} />
+        <Route path="/company/dashboard" element={<PrivateRoute><CompanyDashboard /></PrivateRoute>} />
+        <Route path="/company/:companyId" element={<PrivateRoute><CompanyProfilePage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
