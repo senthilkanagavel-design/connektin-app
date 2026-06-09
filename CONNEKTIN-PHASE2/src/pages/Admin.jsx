@@ -1017,11 +1017,16 @@ function BroadcastTab() {
 }
 
 
+function generateToken() {
+  return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+}
+
 function CompaniesAdminTab() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [showAdd, setShowAdd]     = useState(false);
   const [name, setName]           = useState("");
+  const [email, setEmail]         = useState("");
   const [website, setWebsite]     = useState("");
   const [tagline, setTagline]     = useState("");
   const [about, setAbout]         = useState("");
@@ -1032,6 +1037,8 @@ function CompaniesAdminTab() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [saving, setSaving]       = useState(false);
   const [deleting, setDeleting]   = useState(null);
+  const [inviteModal, setInviteModal] = useState(null);
+  const [copied, setCopied]       = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "companies")), snap => {
@@ -1054,8 +1061,11 @@ function CompaniesAdminTab() {
         await uploadBytes(storageRef, logoFile);
         logoURL = await getDownloadURL(storageRef);
       }
+      const token = generateToken();
+      const inviteLink = `${window.location.origin}/invite/${token}`;
       await addDoc(collection(db, "companies"), {
         name: name.trim(),
+        email: email.trim(),
         website: website.trim(),
         tagline: tagline.trim(),
         about: about.trim(),
@@ -1063,13 +1073,21 @@ function CompaniesAdminTab() {
         size: size.trim(),
         founded: founded.trim(),
         logoURL,
+        status: "invited",
+        inviteToken: token,
+        inviteLink,
         followers: [],
         createdAt: serverTimestamp(),
       });
-      setName(""); setWebsite(""); setTagline(""); setAbout(""); setLocation(""); setSize(""); setFounded(""); setLogoFile(null); setLogoPreview(null);
+      setInviteModal({ name: name.trim(), email: email.trim(), inviteLink });
+      setName(""); setEmail(""); setWebsite(""); setTagline(""); setAbout(""); setLocation(""); setSize(""); setFounded(""); setLogoFile(null); setLogoPreview(null);
       setShowAdd(false);
     } catch (err) { console.error(err); }
     finally { setSaving(false); }
+  }
+
+  async function resendInvite(company) {
+    setInviteModal({ name: company.name, email: company.email || "—", inviteLink: company.inviteLink || "No invite link found" });
   }
 
   async function deleteCompany(id) {
@@ -1079,8 +1097,37 @@ function CompaniesAdminTab() {
     finally { setDeleting(null); }
   }
 
+  function copyLink(link) {
+    navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
   return (
     <div>
+      {/* Invite Success Modal */}
+      {inviteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: T.white, borderRadius: 16, padding: "28px 24px", maxWidth: 440, width: "100%", fontFamily: T.font, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#D1FAE5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Company added!</div>
+            <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>
+              Share this invite link with <strong style={{ color: T.text }}>{inviteModal.name}</strong>. Once they click it, they'll set a password and land on their company dashboard.
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, textAlign: "left", marginBottom: 5, fontWeight: 600 }}>Invite link:</div>
+            <div style={{ background: "#F0F4F8", border: `1px solid ${T.border}`, borderRadius: 9, padding: "10px 12px", fontSize: 11, color: "#185FA5", wordBreak: "break-all", textAlign: "left", marginBottom: 14 }}>
+              {inviteModal.inviteLink}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => copyLink(inviteModal.inviteLink)} style={{ flex: 1, padding: "10px 0", background: T.white, color: copied ? "#065F46" : T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font, fontWeight: 600 }}>
+                {copied ? "Copied ✓" : "Copy link"}
+              </button>
+              <button onClick={() => setInviteModal(null)} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SectionHeader title={`Companies (${companies.length})`} action={
         <button onClick={() => setShowAdd(!showAdd)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.teal, color: T.white, border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
           + Add Company
@@ -1091,6 +1138,7 @@ function CompaniesAdminTab() {
         <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "18px 16px", marginBottom: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Company name *" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Contact email * (invite will be sent here)" type="email" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
             <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Tagline (optional)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
             <textarea value={about} onChange={e => setAbout(e.target.value)} placeholder="About the company (optional)" rows={3} style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", resize: "vertical" }} />
             <div style={{ display: "flex", gap: 8 }}>
@@ -1112,7 +1160,7 @@ function CompaniesAdminTab() {
               <input id="company-logo-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={addCompany} disabled={saving || !name.trim()} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font, opacity: (saving || !name.trim()) ? 0.6 : 1 }}>{saving ? "Saving…" : "Save Company"}</button>
+              <button onClick={addCompany} disabled={saving || !name.trim()} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font, opacity: (saving || !name.trim()) ? 0.6 : 1 }}>{saving ? "Saving…" : "Save & generate invite link"}</button>
               <button onClick={() => setShowAdd(false)} style={{ padding: "10px 16px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 9, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Cancel</button>
             </div>
           </div>
@@ -1129,9 +1177,15 @@ function CompaniesAdminTab() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.font }}>{c.name}</div>
                 {c.tagline && <div style={{ fontSize: 12, color: T.muted, fontFamily: T.font }}>{c.tagline}</div>}
-                {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: T.teal, fontFamily: T.font }}>{c.website}</a>}
+                {c.email && <div style={{ fontSize: 11, color: T.teal, fontFamily: T.font }}>{c.email}</div>}
+                {c.status && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font, background: c.status === "active" ? "#D1FAE5" : "#FEF3C7", color: c.status === "active" ? "#065F46" : "#854F0B" }}>{c.status === "active" ? "Active" : "Invite sent"}</span>}
               </div>
-              <button onClick={() => deleteCompany(c.id)} disabled={deleting === c.id} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>{Icon.trash} Delete</button>
+              <div style={{ display: "flex", gap: 6 }}>
+                {c.inviteLink && (
+                  <button onClick={() => resendInvite(c)} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>🔗 Link</button>
+                )}
+                <button onClick={() => deleteCompany(c.id)} disabled={deleting === c.id} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>{Icon.trash} Delete</button>
+              </div>
             </div>
           ))}
         </div>
@@ -1139,6 +1193,7 @@ function CompaniesAdminTab() {
     </div>
   );
 }
+
 
 // ── SIDEBAR NAV ────────────────────────────────────────────────────────────────
 const NAV = [
@@ -1229,11 +1284,6 @@ export default function Admin() {
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
-          <button onClick={() => navigate("/dashboard", { state: { tab: "profile" } })} style={{ display: "flex", alignItems: "center", gap: 6, background: T.navy, color: T.white, border: "none", cursor: "pointer", fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "7px 14px", borderRadius: 8, flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Back
-          </button>
-          <div style={{ width: 1, height: 20, background: T.border, flexShrink: 0 }} />
           <div style={{ flex: 1 }}><span style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font }}>{NAV.find(n => n.id === active)?.label}</span></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.teal }} />
