@@ -1017,326 +1017,21 @@ function BroadcastTab() {
 }
 
 
-
-// ── CORPORATE TAB ─────────────────────────────────────────────────────────────
-
-const COMPANY_SIZES = ["1–10", "10–50", "50–200", "200–500", "500+"];
-
-function generateToken() {
-  return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-}
-
-function CoLogo({ c, size = 44 }) {
-  const palettes = [
-    { bg: "#E6FAF8", color: "#0F6E56" },
-    { bg: "#E6F1FB", color: "#185FA5" },
-    { bg: "#F5F3FF", color: "#534AB7" },
-    { bg: "#FEF3C7", color: "#854F0B" },
-    { bg: "#FAECE7", color: "#993C1D" },
-  ];
-  const p = palettes[(c.name?.charCodeAt(0) || 65) % palettes.length];
-  const initials = (c.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-  if (c.logoURL) return (
-    <img src={c.logoURL} alt={c.name} style={{ width: size, height: size, borderRadius: 10, objectFit: "contain", flexShrink: 0 }} />
-  );
-  return (
-    <div style={{ width: size, height: size, borderRadius: 10, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.32), fontWeight: 800, flexShrink: 0, fontFamily: T.font }}>
-      {initials}
-    </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const cfg = {
-    active:  { bg: "#D1FAE5", color: "#065F46", label: "Active" },
-    invited: { bg: "#E6F1FB", color: "#185FA5", label: "Invite sent" },
-    pending: { bg: "#FEF3C7", color: "#854F0B", label: "Pending" },
-  }[status] || { bg: "#F1F5F9", color: "#475569", label: status };
-  return (
-    <span style={{ background: cfg.bg, color: cfg.color, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>
-      {cfg.label}
-    </span>
-  );
-}
-
-function AddCompanyModal({ onClose, onAdded }) {
-  const [form, setForm] = useState({ name: "", email: "", industry: "", location: "", size: "10–50", website: "", about: "", tagline: "", founded: "" });
-  const [logoFile, setLogoFile]     = useState(null);
+function CompaniesAdminTab() {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [name, setName]           = useState("");
+  const [website, setWebsite]     = useState("");
+  const [tagline, setTagline]     = useState("");
+  const [about, setAbout]         = useState("");
+  const [location, setLocation]   = useState("");
+  const [size, setSize]           = useState("");
+  const [founded, setFounded]     = useState("");
+  const [logoFile, setLogoFile]   = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState("");
-
-  function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
-
-  async function handleSubmit() {
-    if (!form.name.trim())  { setError("Company name is required."); return; }
-    if (!form.email.trim()) { setError("Contact email is required."); return; }
-    if (!form.industry)     { setError("Please select an industry."); return; }
-    setError("");
-    setSaving(true);
-    try {
-      let logoURL = "";
-      if (logoFile) {
-        const ext = logoFile.name.split(".").pop();
-        const storageRef = ref(storage, `companies/${Date.now()}.${ext}`);
-        await uploadBytes(storageRef, logoFile);
-        logoURL = await getDownloadURL(storageRef);
-      }
-      const token = generateToken();
-      const companyRef = await addDoc(collection(db, "companies"), {
-        name:        form.name.trim(),
-        tagline:     form.tagline.trim(),
-        email:       form.email.trim(),
-        industry:    form.industry,
-        location:    form.location.trim(),
-        size:        form.size,
-        website:     form.website.trim(),
-        about:       form.about.trim(),
-        founded:     form.founded.trim(),
-        logoURL,
-        status:      "invited",
-        inviteToken: token,
-        inviteLink:  `${window.location.origin}/invite/${token}`,
-        followers:   [],
-        createdAt:   serverTimestamp(),
-      });
-      onAdded({ id: companyRef.id, ...form, logoURL, status: "invited", inviteToken: token, inviteLink: `${window.location.origin}/invite/${token}` });
-    } catch (err) {
-      console.error("Add company error:", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inp = { width: "100%", padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: T.white, color: T.text, boxSizing: "border-box" };
-  const lbl = { fontSize: 11, fontWeight: 600, color: T.muted, display: "block", marginBottom: 4, fontFamily: T.font };
-
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: T.white, borderRadius: 16, border: `1px solid ${T.border}`, padding: 24, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font }}>Add company</div>
-            <div style={{ fontSize: 12, color: T.muted, fontFamily: T.font, marginTop: 2 }}>An invite link will be emailed to the company.</div>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
-        </div>
-
-        {error && <div style={{ background: "#FEE2E2", color: "#991B1B", borderRadius: 8, padding: "8px 12px", fontSize: 12, marginBottom: 12, fontFamily: T.font }}>{error}</div>}
-
-        <div onClick={() => document.getElementById("co-logo-up").click()} style={{ border: `1.5px dashed ${T.teal}`, borderRadius: 10, padding: 12, background: "#F0FDFB", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          {logoPreview
-            ? <img src={logoPreview} alt="logo" style={{ width: 44, height: 44, borderRadius: 8, objectFit: "contain", flexShrink: 0 }} />
-            : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🏢</div>
-          }
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.teal, fontFamily: T.font }}>{logoPreview ? "Logo selected ✓" : "Upload company logo"}</div>
-            <div style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>PNG, JPG · Max 2MB · optional</div>
-          </div>
-          <input id="co-logo-up" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) { setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); } }} />
-        </div>
-
-        <div style={{ marginBottom: 10 }}>
-          <label style={lbl}>Company name *</label>
-          <input style={inp} placeholder="e.g. TherMite Educare" value={form.name} onChange={e => set("name", e.target.value)} />
-        </div>
-
-        <div style={{ marginBottom: 10 }}>
-          <label style={lbl}>Contact email * <span style={{ fontWeight: 400 }}>(invite will be sent here)</span></label>
-          <input style={inp} type="email" placeholder="hr@company.com" value={form.email} onChange={e => set("email", e.target.value)} />
-        </div>
-
-        <div style={{ marginBottom: 10 }}>
-          <label style={lbl}>Tagline</label>
-          <input style={inp} placeholder="e.g. Learn Beyond Boundaries" value={form.tagline} onChange={e => set("tagline", e.target.value)} />
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-          <div>
-            <label style={lbl}>Industry *</label>
-            <select style={{ ...inp, appearance: "none" }} value={form.industry} onChange={e => set("industry", e.target.value)}>
-              <option value="">Select industry</option>
-              {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={lbl}>Location *</label>
-            <input style={inp} placeholder="City" value={form.location} onChange={e => set("location", e.target.value)} />
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-          <div>
-            <label style={lbl}>Team size</label>
-            <select style={{ ...inp, appearance: "none" }} value={form.size} onChange={e => set("size", e.target.value)}>
-              {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={lbl}>Website</label>
-            <input style={inp} placeholder="https://..." value={form.website} onChange={e => set("website", e.target.value)} />
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 10 }}>
-          <label style={lbl}>Founded year</label>
-          <input style={inp} placeholder="e.g. 2020" value={form.founded} onChange={e => set("founded", e.target.value)} />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>About</label>
-          <textarea style={{ ...inp, minHeight: 72, resize: "vertical" }} placeholder="What does this company do?" value={form.about} onChange={e => set("about", e.target.value)} />
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ padding: "10px 16px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Cancel</button>
-          <button onClick={handleSubmit} disabled={saving} style={{ flex: 1, padding: "10px 0", background: saving ? "#94A3B8" : T.teal, color: T.white, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", fontFamily: T.font }}>
-            {saving ? "Adding…" : "Add & send invite"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function InviteSuccessModal({ company, onClose }) {
-  const [copied, setCopied] = useState(false);
-  function copyLink() {
-    navigator.clipboard.writeText(company.inviteLink || "").then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  }
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: T.white, borderRadius: 16, border: `1px solid ${T.border}`, padding: 24, width: "100%", maxWidth: 400, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#D1FAE5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6, fontFamily: T.font }}>Invite sent!</div>
-        <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 16, fontFamily: T.font }}>
-          An email has been sent to <strong style={{ color: T.text }}>{company.email}</strong>. Once they click the link, they'll set a password and land directly on their company dashboard.
-        </div>
-        <div style={{ fontSize: 11, color: T.muted, textAlign: "left", marginBottom: 6, fontFamily: T.font }}>Invite link:</div>
-        <div style={{ background: "#F6F8FA", border: `1px solid ${T.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 11, color: "#185FA5", wordBreak: "break-all", textAlign: "left", marginBottom: 14, fontFamily: T.font }}>
-          {company.inviteLink}
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={copyLink} style={{ flex: 1, padding: "10px 0", background: T.white, color: copied ? "#065F46" : T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>
-            {copied ? "Copied ✓" : "Copy link"}
-          </button>
-          <button onClick={onClose} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Done</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CompanyProfilePanel({ company, onBack, onResendInvite, onRemove }) {
-  const [removing, setRemoving] = useState(false);
-  const palettes = [
-    { bg: "#E6FAF8", color: "#0F6E56" },
-    { bg: "#E6F1FB", color: "#185FA5" },
-    { bg: "#F5F3FF", color: "#534AB7" },
-    { bg: "#FEF3C7", color: "#854F0B" },
-    { bg: "#FAECE7", color: "#993C1D" },
-  ];
-  const p = palettes[(company.name?.charCodeAt(0) || 65) % palettes.length];
-  const initials = (company.name || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-
-  async function handleRemove() {
-    if (!window.confirm(`Remove ${company.name}? This cannot be undone.`)) return;
-    setRemoving(true);
-    try {
-      await deleteDoc(doc(db, "companies", company.id));
-      onRemove();
-    } catch (err) { console.error(err); setRemoving(false); }
-  }
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: T.teal, fontFamily: T.font, fontSize: 13, fontWeight: 600, cursor: "pointer", padding: 0 }}>
-          {Icon.back} Back to directory
-        </button>
-        <div style={{ flex: 1 }} />
-        <button onClick={onResendInvite} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          Resend invite
-        </button>
-        <button onClick={handleRemove} disabled={removing} style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", background: T.white, color: T.danger, border: `1.5px solid #FCA5A5`, borderRadius: 8, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: removing ? 0.5 : 1 }}>
-          {Icon.trash} {removing ? "Removing…" : "Remove"}
-        </button>
-      </div>
-
-      <div style={{ background: T.white, borderRadius: 16, border: `1px solid ${T.border}`, overflow: "hidden", maxWidth: 560 }}>
-        <div style={{ background: "#0A1628", padding: "20px 20px 0", display: "flex", alignItems: "flex-end", gap: 16 }}>
-          <div style={{ marginBottom: -16, flexShrink: 0 }}>
-            <div style={{ border: "3px solid #fff", borderRadius: 12, overflow: "hidden" }}>
-              {company.logoURL
-                ? <img src={company.logoURL} alt={company.name} style={{ width: 64, height: 64, objectFit: "contain" }} />
-                : <div style={{ width: 64, height: 64, background: p.bg, color: p.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, fontFamily: T.font }}>{initials}</div>
-              }
-            </div>
-          </div>
-          <div style={{ paddingBottom: 20, flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: T.font }}>{company.name}</div>
-            {company.tagline && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2, fontFamily: T.font }}>{company.tagline}</div>}
-          </div>
-          <div style={{ paddingBottom: 20 }}><StatusBadge status={company.status || "pending"} /></div>
-        </div>
-
-        <div style={{ padding: "28px 20px 20px" }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-            {company.industry  && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>{company.industry.replace(/_/g, " ")}</span>}
-            {company.location  && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>📍 {company.location}</span>}
-            {company.size      && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 11, padding: "3px 10px", borderRadius: 20, fontFamily: T.font }}>👥 {company.size}</span>}
-          </div>
-
-          {company.about && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6, fontFamily: T.font }}>About</div>
-              <div style={{ fontSize: 13, color: T.text, lineHeight: 1.7, fontFamily: T.font }}>{company.about}</div>
-            </div>
-          )}
-
-          <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10, fontFamily: T.font }}>Details</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {[
-                { label: "Contact email", value: company.email },
-                { label: "Website",       value: company.website },
-                { label: "Location",      value: company.location },
-                { label: "Team size",     value: company.size },
-                { label: "Founded",       value: company.founded },
-                { label: "Industry",      value: company.industry?.replace(/_/g, " ") },
-                { label: "Registered",    value: company.createdAt?.toDate?.()?.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) || "—" },
-              ].filter(d => d.value).map(d => (
-                <div key={d.label} style={{ background: "#F6F8FA", borderRadius: 8, padding: "9px 12px" }}>
-                  <div style={{ fontSize: 10, color: T.faint, fontFamily: T.font, marginBottom: 2 }}>{d.label}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: d.label === "Contact email" || d.label === "Website" ? T.teal : T.text, fontFamily: T.font, wordBreak: "break-all" }}>{d.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {company.inviteLink && (
-            <div style={{ marginTop: 16, background: "#F6F8FA", border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 12px" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, fontFamily: T.font }}>Invite link</div>
-              <div style={{ fontSize: 11, color: "#185FA5", wordBreak: "break-all", fontFamily: T.font }}>{company.inviteLink}</div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CorporateTab() {
-  const [companies, setCompanies]         = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [search, setSearch]               = useState("");
-  const [selected, setSelected]           = useState(null);
-  const [showAdd, setShowAdd]             = useState(false);
-  const [inviteCompany, setInviteCompany] = useState(null);
+  const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "companies")), snap => {
@@ -1348,87 +1043,95 @@ function CorporateTab() {
     return unsub;
   }, []);
 
-  function handleAdded(company) {
-    setShowAdd(false);
-    setInviteCompany(company);
+  async function addCompany() {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      let logoURL = "";
+      if (logoFile) {
+        const ext = logoFile.name.split(".").pop();
+        const storageRef = ref(storage, `companies/${Date.now()}.${ext}`);
+        await uploadBytes(storageRef, logoFile);
+        logoURL = await getDownloadURL(storageRef);
+      }
+      await addDoc(collection(db, "companies"), {
+        name: name.trim(),
+        website: website.trim(),
+        tagline: tagline.trim(),
+        about: about.trim(),
+        location: location.trim(),
+        size: size.trim(),
+        founded: founded.trim(),
+        logoURL,
+        followers: [],
+        createdAt: serverTimestamp(),
+      });
+      setName(""); setWebsite(""); setTagline(""); setAbout(""); setLocation(""); setSize(""); setFounded(""); setLogoFile(null); setLogoPreview(null);
+      setShowAdd(false);
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
   }
 
-  const filtered = companies.filter(c => {
-    if (!search || search.length < 3) return true;
-    const q = search.toLowerCase();
-    return (
-      c.name?.toLowerCase().includes(q) ||
-      c.industry?.toLowerCase().includes(q) ||
-      c.location?.toLowerCase().includes(q)
-    );
-  });
-
-  if (selected) {
-    return (
-      <CompanyProfilePanel
-        company={selected}
-        onBack={() => setSelected(null)}
-        onResendInvite={() => setInviteCompany(selected)}
-        onRemove={() => setSelected(null)}
-      />
-    );
+  async function deleteCompany(id) {
+    setDeleting(id);
+    try { await deleteDoc(doc(db, "companies", id)); }
+    catch (err) { console.error(err); }
+    finally { setDeleting(null); }
   }
 
   return (
     <div>
-      {showAdd && <AddCompanyModal onClose={() => setShowAdd(false)} onAdded={handleAdded} />}
-      {inviteCompany && <InviteSuccessModal company={inviteCompany} onClose={() => setInviteCompany(null)} />}
+      <SectionHeader title={`Companies (${companies.length})`} action={
+        <button onClick={() => setShowAdd(!showAdd)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.teal, color: T.white, border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
+          + Add Company
+        </button>
+      } />
 
-      <SectionHeader
-        title={`Corporate directory (${companies.length})`}
-        action={
-          <button onClick={() => setShowAdd(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.teal, color: T.white, border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
-            + Add company
-          </button>
-        }
-      />
-
-      <div style={{ marginBottom: 16 }}>
-        <input
-          type="text"
-          placeholder="Search by name, industry or location (3+ chars)…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="corp-search"
-          style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", background: "#FFFFFF", color: "#000000", caretColor: "#0D9488", cursor: "text", boxSizing: "border-box" }}
-        />
-        {search.length > 0 && search.length < 3 && (
-          <div style={{ fontSize: 11, color: T.faint, marginTop: 4, fontFamily: T.font }}>Type {3 - search.length} more character{3 - search.length > 1 ? "s" : ""} to search…</div>
-        )}
-        {search.length >= 3 && (
-          <div style={{ fontSize: 11, color: T.teal, fontWeight: 600, marginTop: 4, fontFamily: T.font }}>{filtered.length} result{filtered.length !== 1 ? "s" : ""} found</div>
-        )}
-      </div>
-
-      {loading ? <Loader /> : filtered.length === 0 ? <Empty message="No companies found" icon="🏢" /> : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
-          {filtered.map(c => (
-            <div key={c.id} onClick={() => setSelected(c)} style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: 16, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <CoLogo c={c} size={44} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                  {c.tagline && <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.tagline}</div>}
-                </div>
-              </div>
-              {c.about && (
-                <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, fontFamily: T.font, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {c.about}
-                </div>
+      {showAdd && (
+        <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "18px 16px", marginBottom: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Company name *" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
+            <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Tagline (optional)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
+            <textarea value={about} onChange={e => setAbout(e.target.value)} placeholder="About the company (optional)" rows={3} style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", resize: "vertical" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Location (e.g. Bengaluru)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", flex: 1 }} />
+              <input value={founded} onChange={e => setFounded(e.target.value)} placeholder="Founded year" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", width: 110 }} />
+            </div>
+            <input value={size} onChange={e => setSize(e.target.value)} placeholder="Team size (e.g. 50–200)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
+            <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Website URL (https://...)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
+            <div onClick={() => document.getElementById("company-logo-upload").click()} style={{ border: `2px dashed ${T.border}`, borderRadius: 9, padding: "12px", cursor: "pointer", textAlign: "center", background: "#FAFAFA", display: "flex", alignItems: "center", gap: 12 }}>
+              {logoPreview ? (
+                <img src={logoPreview} alt="logo" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 8 }} />
+              ) : (
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: T.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏢</div>
               )}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                {c.industry && <span style={{ background: "#E6FAF8", color: "#0F6E56", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.industry.replace(/_/g, " ")}</span>}
-                {c.location && <span style={{ background: "#F1F5F9", color: "#475569", fontSize: 10, padding: "2px 8px", borderRadius: 20, fontFamily: T.font }}>{c.location}</span>}
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: T.font }}>{logoPreview ? "Logo selected ✓" : "Upload logo"}</div>
+                <div style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>PNG, JPG · Max 2MB · optional</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 10, borderTop: `0.5px solid ${T.border}` }}>
-                <StatusBadge status={c.status || "pending"} />
-                <span style={{ fontSize: 11, color: T.teal, fontWeight: 600, fontFamily: T.font }}>View profile →</span>
+              <input id="company-logo-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={addCompany} disabled={saving || !name.trim()} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font, opacity: (saving || !name.trim()) ? 0.6 : 1 }}>{saving ? "Saving…" : "Save Company"}</button>
+              <button onClick={() => setShowAdd(false)} style={{ padding: "10px 16px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 9, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? <Loader /> : companies.length === 0 ? <Empty message="No companies yet" icon="🏢" /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {companies.map(c => (
+            <div key={c.id} style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F2EF", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {c.logoURL ? <img src={c.logoURL} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "#0A1628" }}>{(c.name||"C")[0]}</span>}
               </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.font }}>{c.name}</div>
+                {c.tagline && <div style={{ fontSize: 12, color: T.muted, fontFamily: T.font }}>{c.tagline}</div>}
+                {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: T.teal, fontFamily: T.font }}>{c.website}</a>}
+              </div>
+              <button onClick={() => deleteCompany(c.id)} disabled={deleting === c.id} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>{Icon.trash} Delete</button>
             </div>
           ))}
         </div>
@@ -1447,7 +1150,7 @@ const NAV = [
   { id: "stories",    label: "Stories",        icon: Icon.stories   },
   { id: "challenges", label: "Challenges",     icon: Icon.game      },
   { id: "broadcast",  label: "Broadcast",      icon: "📣"           },
-  { id: "corporate",  label: "Corporate",      icon: "🏛"           },
+  { id: "companies",  label: "Companies",      icon: "🏢"           },
   { id: "referrals",  label: "Referral Codes", icon: Icon.referral  },
 ];
 
@@ -1480,15 +1183,13 @@ export default function Admin() {
     challenges: <ChallengesTab />,
     referrals:  <ReferralCodesAdmin />,
     broadcast:  <BroadcastTab />,
-    corporate:  <CorporateTab />,
+    companies:  <CompaniesAdminTab />,
   };
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.font, display: "flex" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
-        .corp-search { color: #000000 !important; background: #ffffff !important; caret-color: #0D9488 !important; cursor: text !important; }
-        .corp-search::placeholder { color: #9CA3AF !important; }
         @media (max-width: 768px) {
           .admin-sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
           .admin-sidebar.open { transform: translateX(0) !important; }
@@ -1526,10 +1227,10 @@ export default function Admin() {
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} />}
 
       <div className="admin-main" style={{ flex: 1, marginLeft: 220, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 16px", position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
+        <div style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: "0 24px", position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", height: 56, gap: 14 }}>
           <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, display: "none", padding: 4 }} className="mobile-menu-btn">{Icon.menu}</button>
-          <button onClick={() => navigate("/dashboard", { state: { tab: "profile" } })} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.muted, fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "6px 10px", borderRadius: 8, flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <button onClick={() => navigate("/dashboard", { state: { tab: "profile" } })} style={{ display: "flex", alignItems: "center", gap: 6, background: T.navy, color: T.white, border: "none", cursor: "pointer", fontFamily: T.font, fontSize: 13, fontWeight: 600, padding: "7px 14px", borderRadius: 8, flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
             Back
           </button>
           <div style={{ width: 1, height: 20, background: T.border, flexShrink: 0 }} />
