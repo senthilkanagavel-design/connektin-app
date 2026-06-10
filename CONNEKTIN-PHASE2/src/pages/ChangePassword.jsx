@@ -79,7 +79,7 @@ export default function ChangePassword() {
           </div>
 
           <img
-            src="/logo512.png"
+            src="/icon-512.png"
             alt="ConnektIn"
             style={S.logo}
           />
