@@ -440,4 +440,3 @@ const S = {
     cursor: 'pointer',
   },
 };
-```
