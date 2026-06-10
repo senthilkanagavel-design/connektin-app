@@ -8,6 +8,10 @@ export default function ChangePassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const checks = {
     length: newPassword.length >= 8,
     upper: /[A-Z]/.test(newPassword),
@@ -44,8 +48,6 @@ export default function ChangePassword() {
 
   return (
     <div style={S.page}>
-      {/* Header */}
-
       <div style={S.header}>
         <button
           style={S.backBtn}
@@ -58,13 +60,10 @@ export default function ChangePassword() {
           Change Password
         </div>
 
-        <div style={{ width: 32 }} />
+        <div style={{ width: 30 }} />
       </div>
 
       <div style={S.content}>
-
-        {/* Hero */}
-
         <div style={S.heroCard}>
           <div style={{ flex: 1 }}>
             <div style={S.heroTitle}>
@@ -74,51 +73,101 @@ export default function ChangePassword() {
             <div style={S.heroText}>
               A strong password helps protect
               your professional profile,
-              connections, and activity on
+              connections and activity on
               ConnektIn.
             </div>
           </div>
 
-          <div style={S.heroIcon}>
-            🛡️
-          </div>
+          <img
+            src="/logo512.png"
+            alt="ConnektIn"
+            style={S.logo}
+          />
         </div>
-
-        {/* Current Password */}
 
         <div style={S.label}>
           Current Password
         </div>
 
-        <input
-          type="password"
-          placeholder="Enter current password"
-          value={currentPassword}
-          onChange={(e) =>
-            setCurrentPassword(e.target.value)
-          }
-          style={S.input}
-        />
+        <div style={S.inputWrapper}>
+          <input
+            type={showCurrent ? 'text' : 'password'}
+            placeholder="Enter current password"
+            value={currentPassword}
+            onChange={(e) =>
+              setCurrentPassword(e.target.value)
+            }
+            style={S.input}
+          />
 
-        {/* New Password */}
+          <button
+            type="button"
+            style={S.eyeBtn}
+            onClick={() =>
+              setShowCurrent(!showCurrent)
+            }
+          >
+            {showCurrent ? '🙈' : '👁'}
+          </button>
+        </div>
 
         <div style={S.label}>
           New Password
         </div>
 
-        <input
-          type="password"
-          placeholder="Enter new password"
-          value={newPassword}
-          onChange={(e) =>
-            setNewPassword(e.target.value)
-          }
-          style={S.input}
-        />
+        <div style={S.inputWrapper}>
+          <input
+            type={showNew ? 'text' : 'password'}
+            placeholder="Enter new password"
+            value={newPassword}
+            onChange={(e) =>
+              setNewPassword(e.target.value)
+            }
+            style={S.input}
+          />
 
-        {/* Strength */}
+          <button
+            type="button"
+            style={S.eyeBtn}
+            onClick={() =>
+              setShowNew(!showNew)
+            }
+          >
+            {showNew ? '🙈' : '👁'}
+          </button>
+        </div>
+
+        <div style={S.label}>
+          Confirm Password
+        </div>
+
+        <div style={S.inputWrapper}>
+          <input
+            type={showConfirm ? 'text' : 'password'}
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChange={(e) =>
+              setConfirmPassword(e.target.value)
+            }
+            style={S.input}
+          />
+
+          <button
+            type="button"
+            style={S.eyeBtn}
+            onClick={() =>
+              setShowConfirm(!showConfirm)
+            }
+          >
+            {showConfirm ? '🙈' : '👁'}
+          </button>
+        </div>
 
         <div style={S.strengthContainer}>
+          <div style={S.strengthHeader}>
+            Password Strength
+          </div>
+
           <div style={S.strengthBar}>
             <div
               style={{
@@ -132,15 +181,13 @@ export default function ChangePassword() {
           <div
             style={{
               color: strength.color,
-              fontWeight: 600,
-              marginTop: 6,
+              fontWeight: 700,
+              marginTop: 8,
             }}
           >
             {strength.label}
           </div>
         </div>
-
-        {/* Rules */}
 
         <div style={S.rulesCard}>
           <Rule
@@ -169,32 +216,17 @@ export default function ChangePassword() {
           />
         </div>
 
-        {/* Confirm */}
-
-        <div style={S.label}>
-          Confirm Password
-        </div>
-
-        <input
-          type="password"
-          placeholder="Confirm new password"
-          value={confirmPassword}
-          onChange={(e) =>
-            setConfirmPassword(e.target.value)
-          }
-          style={S.input}
-        />
-
-        {/* Info */}
-
         <div style={S.infoCard}>
-          🔒 For your security, all other
-          active sessions will be signed
-          out after your password is
-          updated.
-        </div>
+          <div style={S.infoTitle}>
+            Session Protection
+          </div>
 
-        {/* Buttons */}
+          <div>
+            After updating your password,
+            all other active sessions will
+            be signed out automatically.
+          </div>
+        </div>
 
         <div style={S.buttonRow}>
           <button
@@ -250,14 +282,12 @@ const S = {
   },
 
   header: {
-    background: '#FFFFFF',
+    background: '#FFF',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px',
+    padding: 16,
     borderBottom: '1px solid #E5E7EB',
-    position: 'sticky',
-    top: 0,
   },
 
   backBtn: {
@@ -270,7 +300,7 @@ const S = {
 
   headerTitle: {
     fontWeight: 700,
-    fontSize: 18,
+    fontSize: 20,
     color: '#062B5B',
   },
 
@@ -279,11 +309,14 @@ const S = {
   },
 
   heroCard: {
-    background: '#EAF7F5',
+    background:
+      'linear-gradient(135deg,#F8FCFB,#EAF7F5)',
+    border: '1px solid #DDEEEB',
     borderRadius: 24,
-    padding: 20,
+    padding: 24,
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 24,
   },
 
@@ -296,32 +329,52 @@ const S = {
 
   heroText: {
     fontSize: 14,
-    lineHeight: 1.6,
+    lineHeight: 1.7,
     color: '#475569',
   },
 
-  heroIcon: {
-    fontSize: 50,
+  logo: {
+    width: 70,
+    height: 70,
   },
 
   label: {
     fontWeight: 600,
-    color: '#1A2433',
     marginBottom: 8,
-    marginTop: 16,
+    marginTop: 18,
+    color: '#1A2433',
+  },
+
+  inputWrapper: {
+    position: 'relative',
   },
 
   input: {
     width: '100%',
-    padding: 14,
-    borderRadius: 14,
+    padding: '16px',
+    borderRadius: 16,
     border: '1px solid #DDE5EA',
-    fontSize: 14,
     boxSizing: 'border-box',
+    fontSize: 14,
+  },
+
+  eyeBtn: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    fontSize: 18,
   },
 
   strengthContainer: {
-    marginTop: 16,
+    marginTop: 20,
+  },
+
+  strengthHeader: {
+    fontWeight: 600,
+    marginBottom: 8,
   },
 
   strengthBar: {
@@ -334,24 +387,30 @@ const S = {
   strengthFill: {
     height: '100%',
     borderRadius: 999,
+    transition: 'all .3s ease',
   },
 
   rulesCard: {
-    background: '#FFFFFF',
-    padding: 16,
+    background: '#FFF',
+    padding: 18,
     borderRadius: 18,
-    marginTop: 16,
-    marginBottom: 12,
+    marginTop: 18,
     border: '1px solid #EEF2F7',
   },
 
   infoCard: {
     background: '#F8FAFB',
     borderRadius: 18,
-    padding: 16,
+    padding: 18,
     marginTop: 20,
     color: '#475569',
-    lineHeight: 1.6,
+    lineHeight: 1.7,
+  },
+
+  infoTitle: {
+    fontWeight: 700,
+    color: '#062B5B',
+    marginBottom: 8,
   },
 
   buttonRow: {
@@ -365,7 +424,7 @@ const S = {
     padding: 14,
     borderRadius: 14,
     border: '1px solid #D1D5DB',
-    background: '#FFFFFF',
+    background: '#FFF',
     cursor: 'pointer',
   },
 
@@ -374,9 +433,11 @@ const S = {
     padding: 14,
     borderRadius: 14,
     border: 'none',
-    background: '#14A39A',
-    color: '#FFFFFF',
-    fontWeight: 600,
+    background:
+      'linear-gradient(135deg,#14A39A,#0F8D85)',
+    color: '#FFF',
+    fontWeight: 700,
     cursor: 'pointer',
   },
 };
+```
