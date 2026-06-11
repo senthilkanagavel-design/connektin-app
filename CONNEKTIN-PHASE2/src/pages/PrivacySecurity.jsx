@@ -14,7 +14,7 @@ export default function PrivacySecurity() {
 
   const securityItems = [
     { icon: '✉️', label: 'Email Verified', sub: user?.email || 'No email', verified: user?.emailVerified },
-    { icon: '🔑', label: 'Change Password', sub: 'Coming soon' },
+    { icon: '🔑', label: 'Change Password', sub: 'Update your account password', route: '/change-password' },
     { icon: '🕐', label: 'Last Login Activity', sub: 'Coming soon' },
     { icon: '📱', label: 'Active Sessions', sub: 'Coming soon' },
     { icon: '👁️', label: 'Biometric Login', sub: 'Face ID / Fingerprint', toggle: true },
@@ -59,25 +59,43 @@ export default function PrivacySecurity() {
         <div style={S.sectionLabel}>Account Security</div>
         <div style={S.card}>
           {securityItems.map((item, i) => (
-            <div key={i} style={{...S.row,borderBottom:i<securityItems.length-1?'1px solid #F3F2EF':'none'}}>
+            <div
+              key={i}
+              style={{
+                ...S.row,
+                borderBottom: i < securityItems.length - 1 ? '1px solid #F3F2EF' : 'none',
+                cursor: item.route ? 'pointer' : 'default',
+              }}
+              onClick={() => item.route && navigate(item.route)}
+            >
               <div style={S.rowIcon}>{item.icon}</div>
               <div style={S.rowText}>
                 <div style={S.rowLabel}>{item.label}</div>
                 <div style={S.rowSub}>{item.sub}</div>
               </div>
+              {item.route && <div style={S.chevron}>›</div>}
             </div>
           ))}
         </div>
 
         <div style={S.sectionLabel}>Data & Privacy</div>
         <div style={S.card}>
-          {privacyItems.map((item,i)=>(
-            <div key={i} style={{...S.row,borderBottom:i<privacyItems.length-1?'1px solid #F3F2EF':'none'}}>
+          {privacyItems.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                ...S.row,
+                borderBottom: i < privacyItems.length - 1 ? '1px solid #F3F2EF' : 'none',
+                cursor: item.route ? 'pointer' : 'default',
+              }}
+              onClick={() => item.route && navigate(item.route)}
+            >
               <div style={S.rowIcon}>{item.icon}</div>
               <div style={S.rowText}>
                 <div style={S.rowLabel}>{item.label}</div>
                 <div style={S.rowSub}>{item.sub}</div>
               </div>
+              {item.route && <div style={S.chevron}>›</div>}
             </div>
           ))}
         </div>
@@ -92,12 +110,13 @@ export default function PrivacySecurity() {
 
         <div style={S.sectionLabel}>Legal & Transparency</div>
         <div style={S.card}>
-          <div style={S.row} onClick={() => navigate('/privacy')}>
+          <div style={{ ...S.row, cursor: 'pointer' }} onClick={() => navigate('/privacy')}>
             <div style={S.rowIcon}>📄</div>
             <div style={S.rowText}>
               <div style={S.rowLabel}>Privacy Policy</div>
               <div style={S.rowSub}>Read how we protect your data</div>
             </div>
+            <div style={S.chevron}>›</div>
           </div>
         </div>
 
@@ -136,6 +155,7 @@ const S = {
  rowText:{flex:1},
  rowLabel:{fontWeight:600},
  rowSub:{fontSize:12,color:'#9CA3AF'},
+ chevron:{fontSize:20,color:'#9CA3AF',fontWeight:400},
  dangerCard:{background:'#fff',borderRadius:16,padding:16,border:'1px solid #FECACA'},
  dangerText:{flex:1},
  dangerTitle:{color:'#DC2626',fontWeight:700},
