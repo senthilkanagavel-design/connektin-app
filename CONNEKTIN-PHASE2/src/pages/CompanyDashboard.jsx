@@ -6,6 +6,7 @@ import { db } from '../firebase/config';
 import { doc, onSnapshot, collection, query, where, getDocs, addDoc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { INDUSTRIES } from '../constants/industries';
 
 const T = {
   navy:   '#0A1628',
@@ -138,17 +139,23 @@ function OverviewTab({ company, companyId, onNav }) {
 }
 
 // ── POST ─────────────────────────────────────────────────────────────────────
-function PostTab({ companyId, companyName }) {
+function PostTab({ companyId, companyName, companyIndustry }) {
   const [type, setType]       = useState('internship');
   const [saving, setSaving]   = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError]     = useState('');
   const [form, setForm]       = useState({
-    title: '', description: '', location: '', workMode: 'remote',
+    title: '', description: '', industry: companyIndustry || '', location: '', workMode: 'remote',
     skills: '', stipend: '', salaryRange: '', duration: '',
     employmentType: 'full_time', experience: '', deadline: '',
     openings: '1', ppo: false, fresher: true,
   });
+
+  // If the company's industry loads after this form mounts, default to it
+  // (only when the user hasn't already picked something).
+  useEffect(() => {
+    if (companyIndustry) setForm(f => (f.industry ? f : { ...f, industry: companyIndustry }));
+  }, [companyIndustry]);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -166,6 +173,7 @@ function PostTab({ companyId, companyName }) {
         skills,
         companyId,
         companyName,
+        industry:       form.industry,
         type,
         openings:       parseInt(form.openings) || 1,
         deadline:       form.deadline,
@@ -184,7 +192,7 @@ function PostTab({ companyId, companyName }) {
         createdAt: serverTimestamp(),
       });
       setSuccess(true);
-      setForm({ title: '', description: '', location: '', workMode: 'remote', skills: '', stipend: '', salaryRange: '', duration: '', employmentType: 'full_time', experience: '', deadline: '', openings: '1', ppo: false, fresher: true });
+      setForm({ title: '', description: '', industry: companyIndustry || '', location: '', workMode: 'remote', skills: '', stipend: '', salaryRange: '', duration: '', employmentType: 'full_time', experience: '', deadline: '', openings: '1', ppo: false, fresher: true });
     } catch (err) {
       console.error(err);
       setError('Something went wrong. Please try again.');
@@ -230,6 +238,14 @@ function PostTab({ companyId, companyName }) {
 
       <label style={lbl}>Description</label>
       <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} placeholder="What will they be doing?" value={form.description} onChange={e => set('description', e.target.value)} />
+
+      <label style={lbl}>Industry</label>
+      <select style={{ ...inp, appearance: 'none' }} value={form.industry} onChange={e => set('industry', e.target.value)}>
+        <option value="">Select industry</option>
+        {INDUSTRIES.map(i => (
+          <option key={i.id} value={i.id}>{i.emoji ? `${i.emoji} ` : ''}{i.label}</option>
+        ))}
+      </select>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
@@ -576,7 +592,7 @@ export default function CompanyDashboard() {
 
   const CONTENT = {
     overview:   <OverviewTab   company={company} companyId={companyId} onNav={setActive} />,
-    post:       <PostTab       companyId={companyId} companyName={company?.name} />,
+    post:       <PostTab       companyId={companyId} companyName={company?.name} companyIndustry={company?.industry} />,
     posts:      <MyPostsTab    companyId={companyId} />,
     applicants: <ApplicantsTab companyId={companyId} />,
     profile:    <ProfileTab    company={company} companyId={companyId} />,

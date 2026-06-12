@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase/config';
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 const T = {
@@ -224,14 +224,12 @@ export default function InvitePage() {
   useEffect(() => {
     async function verify() {
       try {
-        const q = query(collection(db, 'companies'), where('inviteToken', '==', token));
-        const snap = await getDocs(q);
-        if (snap.empty) { setStep('invalid'); return; }
-        const d = snap.docs[0];
-        const data = { id: d.id, ...d.data() };
-        if (data.status === 'active' && data.authUid) { navigate('/login'); return; }
-        setCompany(data);
-        setCompanyDocId(d.id);
+        const snap = await getDoc(doc(db, 'invites', token));
+        if (!snap.exists()) { setStep('invalid'); return; }
+        const inv = snap.data();
+        if (inv.status === 'used') { navigate('/login'); return; }
+        setCompany({ name: inv.name, email: inv.email, logoURL: inv.logoURL || null });
+        setCompanyDocId(inv.companyId);
         setStep('set-password');
       } catch (err) {
         console.error(err);
@@ -263,6 +261,11 @@ export default function InvitePage() {
         authUid:     uid,
         activatedAt: serverTimestamp(),
       });
+      try {
+        await updateDoc(doc(db, 'invites', token), { status: 'used' });
+      } catch (e) {
+        console.error('Could not mark invite as used:', e);
+      }
       setStep('success');
     } catch (err) {
       console.error(err);
