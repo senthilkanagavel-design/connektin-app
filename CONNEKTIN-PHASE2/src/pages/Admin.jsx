@@ -1147,11 +1147,11 @@ function CompaniesAdminTab() {
   const [logoFile, setLogoFile]   = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [saving, setSaving]       = useState(false);
-  const [deleting, setDeleting]   = useState(null);
-  const [confirmDel, setConfirmDel] = useState(null);
+  const [acting, setActing]       = useState(null);
+  const [confirmDeact, setConfirmDeact] = useState(null);
   const [inviteModal, setInviteModal] = useState(null);
   const [copied, setCopied]       = useState(false);
-  const [filter, setFilter]       = useState("all");
+  const [filter, setFilter]       = useState("active");
   const [search, setSearch]       = useState("");
 
   const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1253,19 +1253,30 @@ function CompaniesAdminTab() {
   function copyLink(link) {
     navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
-  async function doDelete(id) {
-    setDeleting(id); setConfirmDel(null);
-    try { await deleteDoc(doc(db, "companies", id)); }
+  async function doDeactivate(id) {
+    setActing(id); setConfirmDeact(null);
+    try { await updateDoc(doc(db, "companies", id), { disabled: true, deactivatedAt: serverTimestamp() }); }
     catch (err) { console.error(err); }
-    finally { setDeleting(null); }
+    finally { setActing(null); }
+  }
+  async function doReactivate(id) {
+    setActing(id);
+    try { await updateDoc(doc(db, "companies", id), { disabled: false, reactivatedAt: serverTimestamp() }); }
+    catch (err) { console.error(err); }
+    finally { setActing(null); }
   }
 
-  const activeCount  = companies.filter(c => c.status === "active").length;
-  const pendingCount = companies.length - activeCount;
+  const isActiveCo   = c => c.status === "active" && !c.disabled;
+  const isPendingCo  = c => c.status !== "active" && !c.disabled;
+  const isInactiveCo = c => !!c.disabled;
+  const activeCount   = companies.filter(isActiveCo).length;
+  const pendingCount  = companies.filter(isPendingCo).length;
+  const inactiveCount = companies.filter(isInactiveCo).length;
   const qq = search.trim().toLowerCase();
   const visible = companies.filter(c => {
-    if (filter === "active"  && c.status !== "active") return false;
-    if (filter === "pending" && c.status === "active") return false;
+    if (filter === "active"   && !isActiveCo(c))   return false;
+    if (filter === "pending"  && !isPendingCo(c))  return false;
+    if (filter === "inactive" && !isInactiveCo(c)) return false;
     if (!qq) return true;
     return (c.name || "").toLowerCase().includes(qq) || (c.email || "").toLowerCase().includes(qq);
   });
@@ -1305,20 +1316,20 @@ function CompaniesAdminTab() {
         </div>
       )}
 
-      {/* Delete confirmation modal */}
-      {confirmDel && (
+      {/* Deactivate confirmation modal */}
+      {confirmDeact && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: T.white, borderRadius: 16, padding: "26px 24px", maxWidth: 420, width: "100%", fontFamily: T.font, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#991B1B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#991B1B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Delete {confirmDel.name}?</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Deactivate {confirmDeact.name}?</div>
             <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 18 }}>
-              This removes the company <strong style={{ color: T.text }}>record only</strong>. Their user account and any jobs or posts they created are <strong style={{ color: T.text }}>not</strong> deleted. This can't be undone.
+              It will immediately disappear from <strong style={{ color: T.text }}>all seekers' view</strong>. Nothing is deleted — their data, jobs and posts are kept, and you can <strong style={{ color: T.text }}>reactivate anytime</strong>.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setConfirmDel(null)} style={{ flex: 1, padding: "10px 0", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font, fontWeight: 600 }}>Cancel</button>
-              <button onClick={() => doDelete(confirmDel.id)} style={{ flex: 1, padding: "10px 0", background: T.danger, color: T.white, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Delete</button>
+              <button onClick={() => setConfirmDeact(null)} style={{ flex: 1, padding: "10px 0", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font, fontWeight: 600 }}>Cancel</button>
+              <button onClick={() => doDeactivate(confirmDeact.id)} style={{ flex: 1, padding: "10px 0", background: T.danger, color: T.white, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Deactivate</button>
             </div>
           </div>
         </div>
@@ -1343,6 +1354,10 @@ function CompaniesAdminTab() {
         <div style={{ background: T.white, border: "1px solid #F2D8A0", borderRadius: 12, padding: "10px 16px", flex: 1, minWidth: 120, fontFamily: T.font }}>
           <div style={{ fontSize: 11, color: "#854F0B" }}>Pending invites</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: "#854F0B", lineHeight: 1.1 }}>{pendingCount}</div>
+        </div>
+        <div style={{ background: T.white, border: "1px solid #DBD9D2", borderRadius: 12, padding: "10px 16px", flex: 1, minWidth: 120, fontFamily: T.font }}>
+          <div style={{ fontSize: 11, color: "#5F5E5A" }}>Inactive</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#5F5E5A", lineHeight: 1.1 }}>{inactiveCount}</div>
         </div>
       </div>
 
@@ -1388,12 +1403,20 @@ function CompaniesAdminTab() {
         </div>
       )}
 
-      {/* Filters + search */}
+      {/* Search */}
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.faint, display: "flex" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email" style={{ ...inpStyle, width: "100%", boxSizing: "border-box", paddingLeft: 36 }} />
+      </div>
+
+      {/* Filters */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
-        <FilterPill val="all" label="All" count={companies.length} />
         <FilterPill val="active" label="Active" count={activeCount} />
         <FilterPill val="pending" label="Pending" count={pendingCount} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or email…" style={{ ...inpStyle, flex: 1, minWidth: 180, marginLeft: "auto" }} />
+        <FilterPill val="inactive" label="Inactive" count={inactiveCount} />
+        <FilterPill val="all" label="All" count={companies.length} />
       </div>
 
       {/* List */}
@@ -1401,16 +1424,17 @@ function CompaniesAdminTab() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {visible.map(c => {
             const isActive = c.status === "active";
+            const isDisabled = !!c.disabled;
             const d = daysSince(c.createdAt);
             return (
-              <div key={c.id} style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, padding: "13px 15px", display: "flex", alignItems: "center", gap: 13 }}>
+              <div key={c.id} style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, padding: "13px 15px", display: "flex", alignItems: "center", gap: 13, opacity: isDisabled ? 0.7 : 1 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F2EF", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {c.logoURL ? <img src={c.logoURL} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <span style={{ fontSize: 18, fontWeight: 800, color: "#0A1628" }}>{(c.name||"C")[0].toUpperCase()}</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font }}>{c.name}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 20, fontFamily: T.font, background: isActive ? "#D1FAE5" : "#FEF3C7", color: isActive ? "#065F46" : "#854F0B" }}>{isActive ? "Active" : "Invite sent"}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 20, fontFamily: T.font, background: isDisabled ? "#F1EFE8" : isActive ? "#D1FAE5" : "#FEF3C7", color: isDisabled ? "#5F5E5A" : isActive ? "#065F46" : "#854F0B" }}>{isDisabled ? "Inactive" : isActive ? "Active" : "Invite sent"}</span>
                   </div>
                   {c.email && <div style={{ fontSize: 11, color: T.teal, fontFamily: T.font, margin: "1px 0 3px" }}>{c.email}</div>}
                   <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font }}>
@@ -1418,14 +1442,19 @@ function CompaniesAdminTab() {
                     {isActive
                       ? <> <span style={{ color: T.faint }}>{"→"}</span> <span style={{ color: "#0F6E56", fontWeight: 600 }}>Joined {fmtDate(c.activatedAt)}</span></>
                       : <> <span style={{ color: T.faint }}>{"·"}</span> <span style={{ color: "#854F0B", fontWeight: 600 }}>Awaiting acceptance{d != null ? ` · ${d}d` : ""}</span></>}
+                    {isDisabled && <> <span style={{ color: T.faint }}>{"·"}</span> <span style={{ color: "#5F5E5A", fontWeight: 600 }}>Deactivated {fmtDate(c.deactivatedAt)}</span></>}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                   <button onClick={() => openEdit(c)} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>Edit</button>
-                  {!isActive && c.inviteLink && (
+                  {!isActive && !isDisabled && c.inviteLink && (
                     <button onClick={() => resendInvite(c)} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>Link</button>
                   )}
-                  <button onClick={() => setConfirmDel(c)} disabled={deleting === c.id} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>Delete</button>
+                  {isDisabled ? (
+                    <button onClick={() => doReactivate(c.id)} disabled={acting === c.id} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid #5DCAA5`, background: T.white, color: "#0F6E56", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, opacity: acting === c.id ? 0.5 : 1 }}>Reactivate</button>
+                  ) : (
+                    <button onClick={() => setConfirmDeact(c)} disabled={acting === c.id} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: acting === c.id ? 0.5 : 1 }}>Deactivate</button>
+                  )}
                 </div>
               </div>
             );
