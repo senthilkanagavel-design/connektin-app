@@ -143,6 +143,7 @@ function OverviewTab() {
   const [industries, setIndustries] = useState({});
   const [loading, setLoading]     = useState(true);
   const [popup, setPopup]         = useState(null); // { title, users, message }
+  const [selMonth, setSelMonth]   = useState("");
 
   useEffect(() => {
     async function load() {
@@ -204,6 +205,69 @@ function OverviewTab() {
 
   const topIndustries = Object.entries(industries).sort((a,b) => b[1]-a[1]).slice(0, 5);
 
+  // ── New users by month ────────────────────────────────────────────────────
+  const PC = { trial: "#F59E0B", thermite: "#2563EB", regular: "#10B981" };
+  const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthBuckets = {};
+  allUsers.forEach(u => {
+    const d = u.createdAt?.toDate?.();
+    if (!d) return;
+    const p = u.plan;
+    if (p !== "trial" && p !== "thermite" && p !== "regular") return;
+    const key = d.getFullYear() + "-" + d.getMonth();
+    if (!monthBuckets[key]) monthBuckets[key] = { trial:0, thermite:0, regular:0, total:0, y:d.getFullYear(), m:d.getMonth() };
+    monthBuckets[key][p]++; monthBuckets[key].total++;
+  });
+  const nowD = new Date();
+  const getBucket = offset => {
+    const d = new Date(nowD.getFullYear(), nowD.getMonth() - offset, 1);
+    const b = monthBuckets[d.getFullYear() + "-" + d.getMonth()] || { trial:0, thermite:0, regular:0, total:0 };
+    return { ...b, label: MN[d.getMonth()] + " " + d.getFullYear() };
+  };
+  const mNow = getBucket(0), mLast = getBucket(1), mPrev = getBucket(2);
+  const totalBucket = { trial: stats.trial, thermite: stats.thermite, regular: stats.regular, total: stats.trial + stats.thermite + stats.regular };
+  const sortedMonths = Object.keys(monthBuckets).sort((a,b) => (monthBuckets[b].y - monthBuckets[a].y) || (monthBuckets[b].m - monthBuckets[a].m));
+  const effSel = selMonth && monthBuckets[selMonth] ? selMonth : (sortedMonths[0] || "");
+  const selB = monthBuckets[effSel] || { trial:0, thermite:0, regular:0, total:0, y:nowD.getFullYear(), m:nowD.getMonth() };
+
+  const inThisMonth = u => { const d = u.createdAt?.toDate?.(); return !!d && d.getFullYear() === nowD.getFullYear() && d.getMonth() === nowD.getMonth(); };
+  const recruiterUsers = allUsers.filter(u => u.userType === "recruiter");
+  const companyUsers   = allUsers.filter(u => u.plan === "company" || u.userType === "company");
+  const recruiterNew   = recruiterUsers.filter(inThisMonth).length;
+  const companyNew     = companyUsers.filter(inThisMonth).length;
+
+  const NuBar = b => (
+    <div style={{ display:"flex", height:9, borderRadius:5, overflow:"hidden", margin:"10px 0 9px", background:"#E9EEF3" }}>
+      <div style={{ flex: b.trial,    background: PC.trial }} />
+      <div style={{ flex: b.thermite, background: PC.thermite }} />
+      <div style={{ flex: b.regular,  background: PC.regular }} />
+    </div>
+  );
+  const NuRows = b => (
+    <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+      {[["trial","Trial"],["thermite","Thermite"],["regular","Regular"]].map(([k,lbl]) => (
+        <span key={k} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:T.muted, fontFamily:T.font }}>
+          <span style={{ width:9, height:9, borderRadius:2, background:PC[k], flexShrink:0 }} />{lbl}
+          <b style={{ fontWeight:800, color: b[k] ? T.text : T.faint, marginLeft:"auto" }}>{b[k]}</b>
+        </span>
+      ))}
+    </div>
+  );
+  const NuCard = ({ label, sub, b, accent }) => (
+    <div style={{ background:T.white, border: accent ? `1.5px solid ${T.teal}` : `1px solid ${T.border}`, borderRadius:12, padding:"14px 16px", fontFamily:T.font }}>
+      <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:6 }}>
+        <span style={{ fontSize:12, fontWeight:700, color: accent ? "#0F6E56" : T.text }}>{label}</span>
+        <span style={{ fontSize:10, color: accent ? T.teal : T.faint }}>{sub}</span>
+      </div>
+      <div style={{ display:"flex", alignItems:"baseline", gap:5 }}>
+        <span style={{ fontSize:26, fontWeight:800, color: accent ? T.teal : T.navy, lineHeight:1 }}>{b.total}</span>
+        <span style={{ fontSize:10, color:T.faint }}>{accent ? "users" : "new"}</span>
+      </div>
+      {NuBar(b)}
+      {NuRows(b)}
+    </div>
+  );
+
   return (
     <div>
       {/* Popup */}
@@ -246,6 +310,50 @@ function OverviewTab() {
         <Card label="Today's signups" value={allUsers.filter(u => { const d = u.createdAt?.toDate?.(); return d && d > new Date(new Date().setHours(0,0,0,0)); }).length} sub="Since midnight" onClick={() => openPopup("Today's signups", u => { const d = u.createdAt?.toDate?.(); return d && d > new Date(new Date().setHours(0,0,0,0)); }, null)} />
         <Card label="Conversion" value={`${convRate}%`} sub="Trial → Paid" color={convRate > 50 ? T.teal : "#F59E0B"} onClick={() => openPopup("Paid users", u => u.plan === "thermite" || u.plan === "regular", null)} />
       </div>
+
+      {/* New users by month */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10, fontFamily: T.font }}>New users</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 14 }}>
+        <NuCard label="This month"   sub={mNow.label}  b={mNow} />
+        <NuCard label="Last month"   sub={mLast.label} b={mLast} />
+        <NuCard label="Month before" sub={mPrev.label} b={mPrev} />
+        <NuCard label="All time"     sub="Total"       b={totalBucket} accent />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginBottom: 14 }}>
+        <Card label="Recruiters" value={recruiterUsers.length} sub={recruiterNew ? `+${recruiterNew} new this month` : "No new this month"} color="#0A4FA8" onClick={() => openPopup(`Recruiters (${recruiterUsers.length})`, u => u.userType === "recruiter", null)} />
+        <Card label="Companies" value={companyUsers.length} sub={companyNew ? `+${companyNew} new this month` : "No new this month"} color={T.navy} onClick={() => openPopup(`Companies (${companyUsers.length})`, u => u.plan === "company" || u.userType === "company", null)} />
+      </div>
+
+      {sortedMonths.length > 0 && (
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 20, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", fontFamily: T.font }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.faint, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Look up any month</div>
+            <select value={effSel} onChange={e => setSelMonth(e.target.value)} style={{ fontFamily: T.font, fontSize: 13, padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.text, cursor: "pointer", outline: "none" }}>
+              {sortedMonths.map(k => <option key={k} value={k}>{MN[monthBuckets[k].m]} {monthBuckets[k].y}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "flex", gap: 18, alignItems: "center", flex: 1, minWidth: 240 }}>
+            <div style={{ minWidth: 96 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{MN[selB.m]} {selB.y}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+                <span style={{ fontSize: 26, fontWeight: 800, color: T.navy, lineHeight: 1 }}>{selB.total}</span>
+                <span style={{ fontSize: 10, color: T.faint }}>new</span>
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              {NuBar(selB)}
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 11, color: T.muted }}>
+                {[["trial","Trial"],["thermite","Thermite"],["regular","Regular"]].map(([k,lbl]) => (
+                  <span key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 2, background: PC[k] }} />{lbl} <b style={{ fontWeight: 800, color: T.text }}>{selB[k]}</b>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Row 2 — Segments */}
       <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10, fontFamily: T.font }}>User segments</div>
@@ -1024,7 +1132,10 @@ function generateToken() {
 function CompaniesAdminTab() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading]     = useState(true);
-  const [showAdd, setShowAdd]     = useState(false);
+  const [showForm, setShowForm]   = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editStatus, setEditStatus] = useState(null);
+  const [existingLogoURL, setExistingLogoURL] = useState("");
   const [name, setName]           = useState("");
   const [email, setEmail]         = useState("");
   const [website, setWebsite]     = useState("");
@@ -1037,8 +1148,15 @@ function CompaniesAdminTab() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [saving, setSaving]       = useState(false);
   const [deleting, setDeleting]   = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
   const [inviteModal, setInviteModal] = useState(null);
   const [copied, setCopied]       = useState(false);
+  const [filter, setFilter]       = useState("all");
+  const [search, setSearch]       = useState("");
+
+  const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmtDate  = ts => { const d = ts?.toDate?.(); return d ? `${d.getDate()} ${MN[d.getMonth()]}` : "—"; };
+  const daysSince = ts => { const d = ts?.toDate?.(); return d ? Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000)) : null; };
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, "companies")), snap => {
@@ -1050,56 +1168,115 @@ function CompaniesAdminTab() {
     return unsub;
   }, []);
 
-  async function addCompany() {
+  function resetForm() {
+    setName(""); setEmail(""); setWebsite(""); setTagline(""); setAbout("");
+    setLocation(""); setSize(""); setFounded(""); setLogoFile(null); setLogoPreview(null);
+    setExistingLogoURL(""); setEditingId(null); setEditStatus(null);
+  }
+  function openAdd() { resetForm(); setShowForm(true); }
+  function openEdit(c) {
+    setName(c.name || ""); setEmail(c.email || ""); setWebsite(c.website || "");
+    setTagline(c.tagline || ""); setAbout(c.about || ""); setLocation(c.location || "");
+    setSize(c.size || ""); setFounded(c.founded || ""); setLogoFile(null); setLogoPreview(null);
+    setExistingLogoURL(c.logoURL || ""); setEditingId(c.id); setEditStatus(c.status || "invited");
+    setShowForm(true);
+  }
+  function closeForm() { resetForm(); setShowForm(false); }
+
+  async function saveCompany() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      let logoURL = "";
+      let logoURL = existingLogoURL;
       if (logoFile) {
         const ext = logoFile.name.split(".").pop();
         const storageRef = ref(storage, `companies/${Date.now()}.${ext}`);
         await uploadBytes(storageRef, logoFile);
         logoURL = await getDownloadURL(storageRef);
       }
-      const token = generateToken();
-      const inviteLink = `${window.location.origin}/invite/${token}`;
-      await addDoc(collection(db, "companies"), {
-        name: name.trim(),
-        email: email.trim(),
-        website: website.trim(),
-        tagline: tagline.trim(),
-        about: about.trim(),
-        location: location.trim(),
-        size: size.trim(),
-        founded: founded.trim(),
-        logoURL,
-        status: "invited",
-        inviteToken: token,
-        inviteLink,
-        followers: [],
-        createdAt: serverTimestamp(),
-      });
-      setInviteModal({ name: name.trim(), email: email.trim(), inviteLink });
-      setName(""); setEmail(""); setWebsite(""); setTagline(""); setAbout(""); setLocation(""); setSize(""); setFounded(""); setLogoFile(null); setLogoPreview(null);
-      setShowAdd(false);
+      if (editingId) {
+        const updates = {
+          name: name.trim(), website: website.trim(), tagline: tagline.trim(),
+          about: about.trim(), location: location.trim(), size: size.trim(),
+          founded: founded.trim(), logoURL,
+        };
+        if (editStatus !== "active") updates.email = email.trim();
+        await updateDoc(doc(db, "companies", editingId), updates);
+        closeForm();
+      } else {
+        const token = generateToken();
+        const inviteLink = `${window.location.origin}/invite/${token}`;
+        const companyRef = await addDoc(collection(db, "companies"), {
+          name: name.trim(), email: email.trim(), website: website.trim(),
+          tagline: tagline.trim(), about: about.trim(), location: location.trim(),
+          size: size.trim(), founded: founded.trim(), logoURL,
+          status: "invited", inviteToken: token, inviteLink, followers: [],
+          createdAt: serverTimestamp(),
+        });
+        await setDoc(doc(db, "invites", token), {
+          companyId: companyRef.id,
+          name:      name.trim(),
+          email:     email.trim(),
+          logoURL:   logoURL || "",
+          status:    "pending",
+          createdAt: serverTimestamp(),
+        });
+        setInviteModal({ name: name.trim(), email: email.trim(), inviteLink });
+        closeForm();
+      }
     } catch (err) { console.error(err); }
     finally { setSaving(false); }
   }
 
   async function resendInvite(company) {
-    setInviteModal({ name: company.name, email: company.email || "—", inviteLink: company.inviteLink || "No invite link found" });
+    if (!company.inviteToken) {
+      setInviteModal({ name: company.name, email: company.email || "—", inviteLink: "No invite token found for this company." });
+      return;
+    }
+    const inviteLink = `${window.location.origin}/invite/${company.inviteToken}`;
+    try {
+      const invRef = doc(db, "invites", company.inviteToken);
+      const invSnap = await getDoc(invRef);
+      if (!invSnap.exists()) {
+        await setDoc(invRef, {
+          companyId: company.id,
+          name:      company.name || "",
+          email:     company.email || "",
+          logoURL:   company.logoURL || "",
+          status:    "pending",
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (err) { console.error("Could not verify/create invite doc:", err); }
+    setInviteModal({ name: company.name, email: company.email || "—", inviteLink });
   }
-
-  async function deleteCompany(id) {
-    setDeleting(id);
+  function copyLink(link) {
+    navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+  async function doDelete(id) {
+    setDeleting(id); setConfirmDel(null);
     try { await deleteDoc(doc(db, "companies", id)); }
     catch (err) { console.error(err); }
     finally { setDeleting(null); }
   }
 
-  function copyLink(link) {
-    navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  }
+  const activeCount  = companies.filter(c => c.status === "active").length;
+  const pendingCount = companies.length - activeCount;
+  const qq = search.trim().toLowerCase();
+  const visible = companies.filter(c => {
+    if (filter === "active"  && c.status !== "active") return false;
+    if (filter === "pending" && c.status === "active") return false;
+    if (!qq) return true;
+    return (c.name || "").toLowerCase().includes(qq) || (c.email || "").toLowerCase().includes(qq);
+  });
+
+  const inpStyle = { padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" };
+  const FilterPill = ({ val, label, count }) => (
+    <button onClick={() => setFilter(val)} style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20, fontFamily: T.font, cursor: "pointer",
+      border: filter === val ? "none" : `1px solid ${T.border}`, background: filter === val ? T.teal : T.white, color: filter === val ? T.white : T.muted }}>
+      {label}{count != null ? ` ${count}` : ""}
+    </button>
+  );
 
   return (
     <div>
@@ -1110,7 +1287,7 @@ function CompaniesAdminTab() {
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#D1FAE5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Company added!</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Invite ready</div>
             <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>
               Share this invite link with <strong style={{ color: T.text }}>{inviteModal.name}</strong>. Once they click it, they'll set a password and land on their company dashboard.
             </div>
@@ -1128,66 +1305,131 @@ function CompaniesAdminTab() {
         </div>
       )}
 
-      <SectionHeader title={`Companies (${companies.length})`} action={
-        <button onClick={() => setShowAdd(!showAdd)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.teal, color: T.white, border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
-          + Add Company
-        </button>
-      } />
-
-      {showAdd && (
-        <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "18px 16px", marginBottom: 16 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Company name *" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Contact email * (invite will be sent here)" type="email" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
-            <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Tagline (optional)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
-            <textarea value={about} onChange={e => setAbout(e.target.value)} placeholder="About the company (optional)" rows={3} style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", resize: "vertical" }} />
-            <div style={{ display: "flex", gap: 8 }}>
-              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Location (e.g. Bengaluru)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", flex: 1 }} />
-              <input value={founded} onChange={e => setFounded(e.target.value)} placeholder="Founded year" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none", width: 110 }} />
+      {/* Delete confirmation modal */}
+      {confirmDel && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: T.white, borderRadius: 16, padding: "26px 24px", maxWidth: 420, width: "100%", fontFamily: T.font, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#991B1B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </div>
-            <input value={size} onChange={e => setSize(e.target.value)} placeholder="Team size (e.g. 50–200)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
-            <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Website URL (https://...)" style={{ padding: "9px 12px", borderRadius: 9, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: T.font, outline: "none" }} />
-            <div onClick={() => document.getElementById("company-logo-upload").click()} style={{ border: `2px dashed ${T.border}`, borderRadius: 9, padding: "12px", cursor: "pointer", textAlign: "center", background: "#FAFAFA", display: "flex", alignItems: "center", gap: 12 }}>
-              {logoPreview ? (
-                <img src={logoPreview} alt="logo" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 8 }} />
-              ) : (
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: T.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏢</div>
-              )}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: T.font }}>{logoPreview ? "Logo selected ✓" : "Upload logo"}</div>
-                <div style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>PNG, JPG · Max 2MB · optional</div>
-              </div>
-              <input id="company-logo-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); }} />
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Delete {confirmDel.name}?</div>
+            <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 18 }}>
+              This removes the company <strong style={{ color: T.text }}>record only</strong>. Their user account and any jobs or posts they created are <strong style={{ color: T.text }}>not</strong> deleted. This can't be undone.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={addCompany} disabled={saving || !name.trim()} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font, opacity: (saving || !name.trim()) ? 0.6 : 1 }}>{saving ? "Saving…" : "Save & generate invite link"}</button>
-              <button onClick={() => setShowAdd(false)} style={{ padding: "10px 16px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 9, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Cancel</button>
+              <button onClick={() => setConfirmDel(null)} style={{ flex: 1, padding: "10px 0", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: T.font, fontWeight: 600 }}>Cancel</button>
+              <button onClick={() => doDelete(confirmDel.id)} style={{ flex: 1, padding: "10px 0", background: T.danger, color: T.white, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Delete</button>
             </div>
           </div>
         </div>
       )}
 
-      {loading ? <Loader /> : companies.length === 0 ? <Empty message="No companies yet" icon="🏢" /> : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {companies.map(c => (
-            <div key={c.id} style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F2EF", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {c.logoURL ? <img src={c.logoURL} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "#0A1628" }}>{(c.name||"C")[0]}</span>}
+      <SectionHeader title={`Companies (${companies.length})`} action={
+        <button onClick={openAdd} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: T.teal, color: T.white, border: "none", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
+          + Add Company
+        </button>
+      } />
+
+      {/* Summary strip */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: "10px 16px", flex: 1, minWidth: 120, fontFamily: T.font }}>
+          <div style={{ fontSize: 11, color: T.muted }}>Total</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.navy, lineHeight: 1.1 }}>{companies.length}</div>
+        </div>
+        <div style={{ background: T.white, border: "1px solid #A7E0CD", borderRadius: 12, padding: "10px 16px", flex: 1, minWidth: 120, fontFamily: T.font }}>
+          <div style={{ fontSize: 11, color: "#0F6E56" }}>Active</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#0F6E56", lineHeight: 1.1 }}>{activeCount}</div>
+        </div>
+        <div style={{ background: T.white, border: "1px solid #F2D8A0", borderRadius: 12, padding: "10px 16px", flex: 1, minWidth: 120, fontFamily: T.font }}>
+          <div style={{ fontSize: 11, color: "#854F0B" }}>Pending invites</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#854F0B", lineHeight: 1.1 }}>{pendingCount}</div>
+        </div>
+      </div>
+
+      {/* Add / Edit form */}
+      {showForm && (
+        <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, padding: "18px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 12 }}>{editingId ? "Edit company" : "Add a company"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Company name *" style={inpStyle} />
+            {editingId && editStatus === "active" ? (
+              <div>
+                <div style={{ ...inpStyle, background: "#F6F8FA", color: "#9CA3AF", cursor: "default" }}>{email || "—"}</div>
+                <div style={{ fontSize: 11, color: T.faint, marginTop: 5, fontFamily: T.font }}>Email is locked — this company has activated, and their login is tied to this address.</div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: T.text, fontFamily: T.font }}>{c.name}</div>
-                {c.tagline && <div style={{ fontSize: 12, color: T.muted, fontFamily: T.font }}>{c.tagline}</div>}
-                {c.email && <div style={{ fontSize: 11, color: T.teal, fontFamily: T.font }}>{c.email}</div>}
-                {c.status && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: T.font, background: c.status === "active" ? "#D1FAE5" : "#FEF3C7", color: c.status === "active" ? "#065F46" : "#854F0B" }}>{c.status === "active" ? "Active" : "Invite sent"}</span>}
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                {c.inviteLink && (
-                  <button onClick={() => resendInvite(c)} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>🔗 Link</button>
-                )}
-                <button onClick={() => deleteCompany(c.id)} disabled={deleting === c.id} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>{Icon.trash} Delete</button>
-              </div>
+            ) : (
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Contact email * (invite will be sent here)" type="email" style={inpStyle} />
+            )}
+            <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Tagline (optional)" style={inpStyle} />
+            <textarea value={about} onChange={e => setAbout(e.target.value)} placeholder="About the company (optional)" rows={3} style={{ ...inpStyle, resize: "vertical" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Location (e.g. Bengaluru)" style={{ ...inpStyle, flex: 1 }} />
+              <input value={founded} onChange={e => setFounded(e.target.value)} placeholder="Founded year" style={{ ...inpStyle, width: 110 }} />
             </div>
-          ))}
+            <input value={size} onChange={e => setSize(e.target.value)} placeholder="Team size (e.g. 50–200)" style={inpStyle} />
+            <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Website URL (https://...)" style={inpStyle} />
+            <div onClick={() => document.getElementById("company-logo-upload").click()} style={{ border: `2px dashed ${T.border}`, borderRadius: 9, padding: "12px", cursor: "pointer", textAlign: "center", background: "#FAFAFA", display: "flex", alignItems: "center", gap: 12 }}>
+              {(logoPreview || existingLogoURL) ? (
+                <img src={logoPreview || existingLogoURL} alt="logo" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 8 }} />
+              ) : (
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: T.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{"🏢"}</div>
+              )}
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: T.font }}>{(logoPreview || existingLogoURL) ? "Logo selected ✓" : "Upload logo"}</div>
+                <div style={{ fontSize: 11, color: T.faint, fontFamily: T.font }}>PNG, JPG · Max 2MB · optional</div>
+              </div>
+              <input id="company-logo-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; setLogoFile(f); setLogoPreview(URL.createObjectURL(f)); }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={saveCompany} disabled={saving || !name.trim()} style={{ flex: 1, padding: "10px 0", background: T.teal, color: T.white, border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: T.font, opacity: (saving || !name.trim()) ? 0.6 : 1 }}>{saving ? "Saving…" : (editingId ? "Save changes" : "Save & generate invite link")}</button>
+              <button onClick={closeForm} style={{ padding: "10px 16px", background: T.white, color: T.muted, border: `1.5px solid ${T.border}`, borderRadius: 9, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters + search */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
+        <FilterPill val="all" label="All" count={companies.length} />
+        <FilterPill val="active" label="Active" count={activeCount} />
+        <FilterPill val="pending" label="Pending" count={pendingCount} />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or email…" style={{ ...inpStyle, flex: 1, minWidth: 180, marginLeft: "auto" }} />
+      </div>
+
+      {/* List */}
+      {loading ? <Loader /> : visible.length === 0 ? <Empty message="No companies match" icon={"🏢"} /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {visible.map(c => {
+            const isActive = c.status === "active";
+            const d = daysSince(c.createdAt);
+            return (
+              <div key={c.id} style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, padding: "13px 15px", display: "flex", alignItems: "center", gap: 13 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "#F3F2EF", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {c.logoURL ? <img src={c.logoURL} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <span style={{ fontSize: 18, fontWeight: 800, color: "#0A1628" }}>{(c.name||"C")[0].toUpperCase()}</span>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: T.font }}>{c.name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 9px", borderRadius: 20, fontFamily: T.font, background: isActive ? "#D1FAE5" : "#FEF3C7", color: isActive ? "#065F46" : "#854F0B" }}>{isActive ? "Active" : "Invite sent"}</span>
+                  </div>
+                  {c.email && <div style={{ fontSize: 11, color: T.teal, fontFamily: T.font, margin: "1px 0 3px" }}>{c.email}</div>}
+                  <div style={{ fontSize: 11, color: T.muted, fontFamily: T.font }}>
+                    Invited {fmtDate(c.createdAt)}
+                    {isActive
+                      ? <> <span style={{ color: T.faint }}>{"→"}</span> <span style={{ color: "#0F6E56", fontWeight: 600 }}>Joined {fmtDate(c.activatedAt)}</span></>
+                      : <> <span style={{ color: T.faint }}>{"·"}</span> <span style={{ color: "#854F0B", fontWeight: 600 }}>Awaiting acceptance{d != null ? ` · ${d}d` : ""}</span></>}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => openEdit(c)} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>Edit</button>
+                  {!isActive && c.inviteLink && (
+                    <button onClick={() => resendInvite(c)} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid ${T.border}`, background: T.white, color: T.muted, fontSize: 12, cursor: "pointer", fontFamily: T.font }}>Link</button>
+                  )}
+                  <button onClick={() => setConfirmDel(c)} disabled={deleting === c.id} style={{ padding: "6px 11px", borderRadius: 8, border: `1.5px solid #FCA5A5`, background: T.white, color: T.danger, fontSize: 12, cursor: "pointer", fontFamily: T.font, opacity: deleting === c.id ? 0.5 : 1 }}>Delete</button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

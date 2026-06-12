@@ -40,8 +40,13 @@ export default function CompanyDetailPage() {
     const unsub = onSnapshot(doc(db, "companies", companyId), snap => {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() };
-        setCompany(data);
-        setFollowing((data.followers || []).includes(user?.uid));
+        if (data.status !== "active" || data.disabled) {
+          // Pending or deactivated companies are not publicly viewable
+          setCompany(null);
+        } else {
+          setCompany(data);
+          setFollowing((data.followers || []).includes(user?.uid));
+        }
       } else {
         setCompany(null);
       }

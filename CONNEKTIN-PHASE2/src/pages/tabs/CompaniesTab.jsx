@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase/config";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 export default function CompaniesTab() {
   const [companies, setCompanies] = useState([]);
@@ -10,9 +10,11 @@ export default function CompaniesTab() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const q = query(collection(db, "companies"));
+    const q = query(collection(db, "companies"), where("status", "==", "active"));
     const unsub = onSnapshot(q, snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const list = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(c => !c.disabled); // Task B ready: hides deactivated companies once the flag exists
       list.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
       setCompanies(list);
       setLoading(false);
