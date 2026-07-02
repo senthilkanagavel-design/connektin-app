@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "connektin-phase2"
+  },
   "targets": {
     "connektin-phase2": {
       "hosting": {

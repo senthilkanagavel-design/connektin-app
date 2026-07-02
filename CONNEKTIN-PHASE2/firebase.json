@@ -3,27 +3,49 @@
     {
       "target": "live",
       "public": "dist",
-      "ignore": ["firebase.json", "**/node_modules/**"],
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**"
+      ],
       "cleanUrls": true,
       "trailingSlash": false,
       "headers": [
         {
           "source": "/.well-known/**",
           "headers": [
-            { "key": "Content-Type", "value": "application/json" },
-            { "key": "Access-Control-Allow-Origin", "value": "*" }
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
           ]
         }
       ],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     },
     {
       "target": "staging",
       "public": "dist",
-      "ignore": ["firebase.json", "**/node_modules/**"],
+      "ignore": [
+        "firebase.json",
+        "**/node_modules/**"
+      ],
       "cleanUrls": true,
       "trailingSlash": false,
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     }
   ],
   "firestore": {
@@ -32,5 +54,19 @@
   },
   "storage": {
     "rules": "storage.rules"
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
 }
