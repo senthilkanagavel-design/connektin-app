@@ -44,6 +44,7 @@ export default function UserProfilePage() {
   const [loading, setLoading]           = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showUpgrade, setShowUpgrade]   = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showNoteSheet, setShowNoteSheet] = useState(false);
   const [noteText, setNoteText]         = useState('');
   const [noteSent, setNoteSent]         = useState(false);
@@ -123,8 +124,18 @@ export default function UserProfilePage() {
     try {
       await updateDoc(doc(db, 'users', uid), { circleMembers: arrayRemove(user.uid), circleCount: increment(-1) });
       await updateDoc(doc(db, 'users', user.uid), { circling: arrayRemove(uid), circlingCount: increment(-1) });
+      await addDoc(collection(db, 'notifications'), {
+        uid, type: 'circle_leave', group: 'circle',
+        fromUid: user.uid,
+        fromName: myProfile?.displayName || 'Someone',
+        fromPhoto: myProfile?.photoURL || null,
+        message: 'left your Circle 😔 They may still be in yours — that\'s up to you.',
+        read: false,
+        createdAt: serverTimestamp(),
+      });
     } catch (e) { console.error('Leave circle error:', e); }
     setActionLoading(false);
+    setShowLeaveConfirm(false);
   };
 
   const handleSendNote = async () => {
@@ -175,9 +186,9 @@ export default function UserProfilePage() {
 
     if (isMember) {
       return (
-        <button style={s.btnInCircle} onClick={handleLeaveCircle} disabled={actionLoading}>
+        <button style={s.btnInCircle} onClick={() => setShowLeaveConfirm(true)} disabled={actionLoading}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}><polyline points="20 6 9 17 4 12"/></svg>
-          {actionLoading ? 'Updating...' : 'In Circle'}
+          {actionLoading ? 'Updating...' : `In ${displayName.split(' ')[0]}'s Circle`}
         </button>
       );
     }
@@ -394,6 +405,31 @@ export default function UserProfilePage() {
             </button>
             <button style={s.overlayCancel} onClick={() => setShowUpgrade(false)}>
               Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Circle Confirmation */}
+      {showLeaveConfirm && (
+        <div style={s.overlay}>
+          <div style={s.overlayCard}>
+            <div style={s.overlayIcon}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>
+            </div>
+            <h3 style={s.overlayTitle}>Leave {displayName.split(' ')[0]}'s Circle?</h3>
+            <p style={s.overlaySub}>
+              {displayName.split(' ')[0]} will be notified that you left. You may still remain in their Circle — that's their choice to keep or remove.
+            </p>
+            <button
+              style={{ ...s.overlayBtn, background: '#DC2626', opacity: actionLoading ? 0.6 : 1 }}
+              onClick={handleLeaveCircle}
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Leaving...' : 'Yes, Leave Circle'}
+            </button>
+            <button style={s.overlayCancel} onClick={() => setShowLeaveConfirm(false)} disabled={actionLoading}>
+              Cancel
             </button>
           </div>
         </div>
