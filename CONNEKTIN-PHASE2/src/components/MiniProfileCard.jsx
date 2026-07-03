@@ -37,6 +37,7 @@ export default function MiniProfileCard({ uid, onClose }) {
   const [loading,       setLoading]       = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showUpgrade,   setShowUpgrade]   = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const isTrialLocked = myProfile?.plan === 'trial' && myProfile?.userType !== 'recruiter';
 
@@ -122,8 +123,17 @@ export default function MiniProfileCard({ uid, onClose }) {
     try {
       await updateDoc(doc(db, 'users', uid), { circleMembers: arrayRemove(user.uid), circleCount: increment(-1) });
       await updateDoc(doc(db, 'users', user.uid), { circling: arrayRemove(uid), circlingCount: increment(-1) });
+      await addDoc(collection(db, 'notifications'), {
+        uid, type: 'circle_leave', group: 'circle',
+        fromUid: user.uid,
+        fromName: myProfile?.displayName || 'Someone',
+        fromPhoto: myProfile?.photoURL || null,
+        message: 'left your Circle 😔 They may still be in yours — that\'s up to you.',
+        read: false, createdAt: serverTimestamp(),
+      });
     } catch (e) { console.error('Leave circle error:', e); }
     setActionLoading(false);
+    setShowLeaveConfirm(false);
   };
 
   const handleViewFull = () => {
@@ -134,7 +144,7 @@ export default function MiniProfileCard({ uid, onClose }) {
   // ── Circle button state ──────────────────────────────────────
   const CircleButton = () => {
     if (isMember) return (
-      <button style={{ ...S.btnBase, ...S.btnCircle }} onClick={handleLeave} disabled={actionLoading}>
+      <button style={{ ...S.btnBase, ...S.btnCircle }} onClick={() => setShowLeaveConfirm(true)} disabled={actionLoading}>
         ∞ In your Circle
       </button>
     );
@@ -260,6 +270,29 @@ export default function MiniProfileCard({ uid, onClose }) {
             </button>
             <button style={S.upgradeLater} onClick={() => setShowUpgrade(false)}>
               Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Circle confirmation modal */}
+      {showLeaveConfirm && (
+        <div style={S.upgradeOverlay} onClick={() => !actionLoading && setShowLeaveConfirm(false)}>
+          <div style={S.upgradeCard} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>💔</div>
+            <div style={S.upgradeTitle}>Leave {displayName.split(' ')[0]}'s Circle?</div>
+            <div style={S.upgradeSub}>
+              {displayName.split(' ')[0]} will be notified that you left. You may still remain in their Circle — that's their choice to keep or remove.
+            </div>
+            <button
+              style={{ ...S.upgradeBtn, background: '#DC2626', opacity: actionLoading ? 0.6 : 1 }}
+              onClick={handleLeave}
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Leaving...' : 'Yes, Leave Circle'}
+            </button>
+            <button style={S.upgradeLater} onClick={() => setShowLeaveConfirm(false)} disabled={actionLoading}>
+              Cancel
             </button>
           </div>
         </div>
