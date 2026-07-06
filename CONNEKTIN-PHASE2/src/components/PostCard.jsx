@@ -8,6 +8,9 @@ import { db } from "../firebase/config";
 import { useNavigate } from "react-router-dom";
 import Avatar from "./Avatar";
 import MiniProfileCard from "./MiniProfileCard";
+import AvatarFullView from "./AvatarFullView";
+import PostImageFullView from "./PostImageFullView";
+import ReportModal from "./ReportModal";
 import { addSignal, SIGNAL_POINTS } from "../utils/signal";
 
 function timeAgo(ts) {
@@ -35,6 +38,12 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
   const [liking, setLiking]             = useState(false);
   const [expanded, setExpanded]         = useState(false);
   const [miniProfileUid, setMiniProfileUid] = useState(null);
+  // ── NEW: full-view states ─────────────────────────────────────────────────
+  const [fullViewPhoto, setFullViewPhoto] = useState(null); // { src, name }
+  const [showImageView, setShowImageView] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────────
+  const [menuOpen, setMenuOpen]         = useState(false);
+  const [showReport, setShowReport]     = useState(false);
   const inputRef = useRef(null);
 
   const uid         = currentUser?.uid;
@@ -44,6 +53,10 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
   const isOwner     = post.uid === uid;
   const isInCircle  = !isOwner && Array.isArray(circling) && circling.includes(post.uid);
   const planBadge   = isOwner ? PLAN_BADGE[profile?.plan] : PLAN_BADGE[post.plan];
+
+  // Resolve the photo URL for the post author's avatar
+  const authorPhotoURL = isOwner ? profile?.photoURL : post.photo;
+  const authorName     = isOwner ? profile?.displayName : post.name;
 
   useEffect(() => {
     if (!showComments) return;
@@ -109,6 +122,19 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
     if (post.uid) setMiniProfileUid(post.uid);
   };
 
+  // ── NEW: tap avatar image specifically to open full view ─────────────────
+  const handleAvatarImageTap = (e) => {
+    e.stopPropagation(); // don't also fire handleAuthorTap → MiniProfileCard
+    if (authorPhotoURL) {
+      setFullViewPhoto({ src: authorPhotoURL, name: authorName });
+    }
+    // If no real photo (using avatar/initials), fall through to MiniProfileCard
+    else if (!isOwner && post.uid) {
+      setMiniProfileUid(post.uid);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   const handleCommentAuthorTap = (c) => {
     if (c.uid && c.uid !== uid) setMiniProfileUid(c.uid);
   };
@@ -121,7 +147,11 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
       <div style={s.card}>
         {/* Header */}
         <div style={s.header}>
-          <div style={{ ...s.avatarWrap, cursor: isOwner ? "default" : "pointer" }} onClick={handleAuthorTap}>
+          {/* Avatar — tapping the image opens full view; tapping name opens MiniProfile */}
+          <div
+            style={{ ...s.avatarWrap, cursor: authorPhotoURL ? "zoom-in" : (isOwner ? "default" : "pointer") }}
+            onClick={handleAvatarImageTap}
+          >
             <Avatar
               uid={post.uid}
               photoURL={isOwner ? profile?.photoURL : post.photo}
@@ -148,6 +178,28 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
             {isInCircle && <div style={s.circlePill}>∞ In your Circle</div>}
             <div style={s.time}>{timeAgo(post.ts)} · {post.industry?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
           </div>
+          {!isOwner && (
+            <div style={{ position: "relative", flexShrink: 0, alignSelf: "flex-start" }}>
+              <button style={s.menuBtn} onClick={() => setMenuOpen((v) => !v)} aria-label="Post options">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round">
+                  <circle cx="12" cy="5" r="0.8" /><circle cx="12" cy="12" r="0.8" /><circle cx="12" cy="19" r="0.8" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <>
+                  <div style={s.menuOverlay} onClick={() => setMenuOpen(false)} />
+                  <div style={s.menuDropdown}>
+                    <button
+                      style={s.menuItem}
+                      onClick={() => { setMenuOpen(false); setShowReport(true); }}
+                    >
+                      🚩 Report post
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Body */}
@@ -165,7 +217,14 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
           )}
         </div>
 
-        {post.image && <img src={post.image} alt="post" style={s.postImage} />}
+        {post.image && (
+          <img
+            src={post.image}
+            alt="post"
+            style={{ ...s.postImage, cursor: "zoom-in" }}
+            onClick={() => setShowImageView(true)}
+          />
+        )}
 
         {(likeCount > 0 || post.commentCount > 0) && (
           <div style={s.statsBar}>
@@ -271,6 +330,36 @@ export default function PostCard({ post, currentUser, profile, circling = [] }) 
       {miniProfileUid && (
         <MiniProfileCard uid={miniProfileUid} onClose={() => setMiniProfileUid(null)} />
       )}
+
+      {/* ── NEW: Full-view photo modal ─────────────────────────────────────── */}
+      {fullViewPhoto && (
+        <AvatarFullView
+          src={fullViewPhoto.src}
+          name={fullViewPhoto.name}
+          onClose={() => setFullViewPhoto(null)}
+        />
+      )}
+
+      {/* ── NEW: Full-view post image modal ───────────────────────────────── */}
+      {showImageView && post.image && (
+        <PostImageFullView
+          src={post.image}
+          onClose={() => setShowImageView(false)}
+        />
+      )}
+      {/* ──────────────────────────────────────────────────────────────────── */}
+
+      {showReport && (
+        <ReportModal
+          targetType="post"
+          targetId={post.id}
+          targetName={post.name}
+          targetOwnerUid={post.uid}
+          currentUser={currentUser}
+          profile={profile}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </>
   );
 }
@@ -285,6 +374,10 @@ const s = {
   ownerBadge:    { fontSize: 10, color: "#0D9488", fontWeight: 700, border: "1px solid #0D9488", borderRadius: 10, padding: "2px 7px" },
   circlePill:    { display: "inline-flex", alignItems: "center", fontSize: 11, color: "#0D9488", fontWeight: 600, background: "#E6F7F5", borderRadius: 10, padding: "2px 8px", marginTop: 2 },
   time:          { fontSize: 11, color: "#9CA3AF", marginTop: 3 },
+  menuBtn:       { background: "none", border: "none", cursor: "pointer", padding: "4px 2px", display: "flex", alignItems: "center", justifyContent: "center" },
+  menuOverlay:   { position: "fixed", inset: 0, zIndex: 90 },
+  menuDropdown:  { position: "absolute", top: 26, right: 0, zIndex: 91, background: "#fff", border: "1px solid #E4E2DC", borderRadius: 10, boxShadow: "0 4px 14px rgba(0,0,0,0.10)", overflow: "hidden", minWidth: 150 },
+  menuItem:      { display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "11px 14px", fontSize: 13.5, fontWeight: 600, color: "#1A1A1A", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" },
   body:          { padding: "10px 14px 4px" },
   text:          { fontSize: 14, color: "#1A1A1A", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", textAlign: "left" },
   seeMore:       { background: "none", border: "none", color: "#0D9488", fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "4px 0 0", fontFamily: "'DM Sans', sans-serif" },
