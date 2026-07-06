@@ -11,6 +11,9 @@ import { useAuth } from '../context/AuthContext';
 import { addSignal, SIGNAL_POINTS } from '../utils/signal';
 import { getSignalBar } from '../utils/signalBar';
 import Avatar from '../components/Avatar';
+import AvatarFullView from '../components/AvatarFullView';
+import { startConversation } from '../utils/startConversation';
+import ReportModal from '../components/ReportModal';
 
 const INDUSTRY_LABELS = {
   medical_coding_billing: 'Medical Coding & Billing',
@@ -40,17 +43,22 @@ export default function UserProfilePage() {
   const navigate       = useNavigate();
   const { user, profile: myProfile } = useAuth();
 
-  const [targetUser, setTargetUser]     = useState(null);
-  const [loading, setLoading]           = useState(true);
+  const [targetUser, setTargetUser]       = useState(null);
+  const [loading, setLoading]             = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showUpgrade, setShowUpgrade]   = useState(false);
+  const [showUpgrade, setShowUpgrade]     = useState(false);
   const [showNoteSheet, setShowNoteSheet] = useState(false);
-  const [noteText, setNoteText]         = useState('');
-  const [noteSent, setNoteSent]         = useState(false);
-  const [articles, setArticles]         = useState([]);
+  const [noteText, setNoteText]           = useState('');
+  const [noteSent, setNoteSent]           = useState(false);
+  const [articles, setArticles]           = useState([]);
+  // ── NEW ──────────────────────────────────────────────────────
+  const [showFullView, setShowFullView]   = useState(false);
+  // ─────────────────────────────────────────────────────────────
+  const [showReport, setShowReport]       = useState(false);
 
-  const isOwnProfile = user?.uid === uid;
+  const isOwnProfile  = user?.uid === uid;
   const isTrialLocked = myProfile?.plan === 'trial' && myProfile?.userType !== 'recruiter';
+  const myPlanIsPaid  = myProfile?.plan === 'thermite' || myProfile?.plan === 'regular';
 
   useEffect(() => {
     if (!uid) return;
@@ -82,7 +90,6 @@ export default function UserProfilePage() {
 
   const goBack = () => navigate(-1);
 
-  // ── Circle handlers ───────────────────────────────────────────
   const handleJoinCircle = async (note = '') => {
     if (isTrialLocked) { setShowUpgrade(true); return; }
     if (actionLoading) return;
@@ -135,7 +142,6 @@ export default function UserProfilePage() {
     await handleJoinCircle(noteText);
   };
 
-  // ── Loading / not found ───────────────────────────────────────
   if (loading) {
     return (
       <div style={s.loadingScreen}>
@@ -169,10 +175,8 @@ export default function UserProfilePage() {
     regular:  { label: 'Regular Plan',  color: '#0A1628', bg: '#E8EAF0' },
   }[plan] || { label: plan, color: '#666', bg: '#F3F2EF' };
 
-  // ── Action buttons ────────────────────────────────────────────
   const circleButton = () => {
     if (isOwnProfile) return null;
-
     if (isMember) {
       return (
         <button style={s.btnInCircle} onClick={handleLeaveCircle} disabled={actionLoading}>
@@ -181,7 +185,6 @@ export default function UserProfilePage() {
         </button>
       );
     }
-
     if (iRequested || isPending) {
       return (
         <button style={s.btnPending} onClick={handleWithdraw} disabled={actionLoading}>
@@ -190,7 +193,6 @@ export default function UserProfilePage() {
         </button>
       );
     }
-
     if (isTrialLocked) {
       return (
         <button style={s.btnLocked} onClick={() => setShowUpgrade(true)}>
@@ -198,7 +200,6 @@ export default function UserProfilePage() {
         </button>
       );
     }
-
     return (
       <div style={{ display: 'flex', gap: 8, width: '100%' }}>
         <button style={{ ...s.btnJoin, flex: 1 }} onClick={() => setShowNoteSheet(true)} disabled={actionLoading}>
@@ -222,12 +223,22 @@ export default function UserProfilePage() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <span style={s.topBarTitle}>Profile</span>
-        <div style={{ width: 36 }} />
+        {!isOwnProfile ? (
+          <button style={s.backBtn} onClick={() => setShowReport(true)} aria-label="Report user">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </button>
+        ) : (
+          <div style={{ width: 36 }} />
+        )}
       </div>
 
       {/* Hero */}
       <div style={s.hero}>
-        <div style={s.avatarWrap}>
+        {/* ── NEW: tap avatar to open full view ── */}
+        <div
+          style={{ ...s.avatarWrap, cursor: targetUser.photoURL ? 'zoom-in' : 'default' }}
+          onClick={() => { if (targetUser.photoURL) setShowFullView(true); }}
+        >
           <Avatar
             uid={targetUser.uid}
             photoURL={targetUser.photoURL}
@@ -238,6 +249,7 @@ export default function UserProfilePage() {
             size={72}
           />
         </div>
+        {/* ─────────────────────────────────────── */}
         <div style={s.heroName}>{displayName}</div>
         <div style={s.heroIndustry}>{industry}</div>
         <div style={{ ...s.planPill, background: planConfig.bg, color: planConfig.color }}>
@@ -281,6 +293,15 @@ export default function UserProfilePage() {
         {!isOwnProfile && (
           <div style={s.actionRow}>
             {circleButton()}
+            {myPlanIsPaid && (
+              <button
+                style={{ ...s.btnNoteOnly, marginTop: 8, width: '100%', justifyContent: 'center', gap: 8, color: '#0D9488', borderColor: '#0D9488' }}
+                onClick={() => startConversation(user.uid, uid, navigate)}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Message {displayName.split(' ')[0]}
+              </button>
+            )}
           </div>
         )}
         {isOwnProfile && (
@@ -291,11 +312,8 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        {/* Note sent confirmation */}
         {noteSent && (
-          <div style={s.noteSentBadge}>
-            ✓ Circle request + note sent!
-          </div>
+          <div style={s.noteSentBadge}>✓ Circle request + note sent!</div>
         )}
       </div>
 
@@ -339,15 +357,13 @@ export default function UserProfilePage() {
         </div>
       )}
 
-      {/* ── Note Sheet ──────────────────────────────────────────── */}
+      {/* Note Sheet */}
       {showNoteSheet && (
         <div style={s.sheetOverlay} onClick={() => setShowNoteSheet(false)}>
           <div style={s.sheet} onClick={e => e.stopPropagation()}>
             <div style={s.sheetHandle} />
             <div style={s.sheetTitle}>Add {displayName.split(' ')[0]} to Circle</div>
             <div style={s.sheetSub}>Send a short note with your request — helps them know why you want to connect.</div>
-
-            {/* Target user */}
             <div style={s.noteTarget}>
               <Avatar uid={targetUser.uid} photoURL={targetUser.photoURL} avatarId={targetUser.avatarId || targetUser.avatar} displayName={displayName} plan={plan} role={role} size={38} />
               <div>
@@ -355,8 +371,6 @@ export default function UserProfilePage() {
                 <div style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'DM Sans, sans-serif' }}>{industry}</div>
               </div>
             </div>
-
-            {/* Note input */}
             <textarea
               value={noteText}
               onChange={e => setNoteText(e.target.value.slice(0, 140))}
@@ -365,17 +379,10 @@ export default function UserProfilePage() {
               style={s.noteInput}
             />
             <div style={s.charCount}>{noteText.length} / 140</div>
-
-            <button
-              onClick={handleSendNote}
-              disabled={actionLoading}
-              style={{ ...s.sendBtn, opacity: actionLoading ? 0.6 : 1 }}
-            >
+            <button onClick={handleSendNote} disabled={actionLoading} style={{ ...s.sendBtn, opacity: actionLoading ? 0.6 : 1 }}>
               {actionLoading ? 'Sending...' : noteText.trim() ? 'Send Circle Request + Note' : 'Send Circle Request'}
             </button>
-            <button style={s.skipBtn} onClick={() => { setShowNoteSheet(false); }}>
-              Cancel
-            </button>
+            <button style={s.skipBtn} onClick={() => setShowNoteSheet(false)}>Cancel</button>
           </div>
         </div>
       )}
@@ -386,17 +393,34 @@ export default function UserProfilePage() {
           <div style={s.overlayCard}>
             <div style={s.overlayIcon}>🔒</div>
             <h3 style={s.overlayTitle}>Upgrade to Join Circles</h3>
-            <p style={s.overlaySub}>
-              Joining professional circles is a premium feature. Upgrade to connect, engage and grow your network on ConnektIn.
-            </p>
-            <button style={s.overlayBtn} onClick={() => { setShowUpgrade(false); navigate('/subscribe'); }}>
-              View Plans
-            </button>
-            <button style={s.overlayCancel} onClick={() => setShowUpgrade(false)}>
-              Maybe Later
-            </button>
+            <p style={s.overlaySub}>Joining professional circles is a premium feature. Upgrade to connect, engage and grow your network on ConnektIn.</p>
+            <button style={s.overlayBtn} onClick={() => { setShowUpgrade(false); navigate('/subscribe'); }}>View Plans</button>
+            <button style={s.overlayCancel} onClick={() => setShowUpgrade(false)}>Maybe Later</button>
           </div>
         </div>
+      )}
+
+      {/* ── NEW: Full-view photo modal ── */}
+      {showFullView && targetUser.photoURL && (
+        <AvatarFullView
+          src={targetUser.photoURL}
+          name={displayName}
+          onClose={() => setShowFullView(false)}
+        />
+      )}
+      {/* ─────────────────────────────── */}
+
+      {/* Report user */}
+      {showReport && (
+        <ReportModal
+          targetType="user"
+          targetId={targetUser.uid}
+          targetName={displayName}
+          targetOwnerUid={targetUser.uid}
+          currentUser={user}
+          profile={myProfile}
+          onClose={() => setShowReport(false)}
+        />
       )}
 
     </div>
@@ -445,8 +469,6 @@ const s = {
   articleThumb:   { width: 36, height: 36, borderRadius: 8, background: '#E6FAF8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   articleTitle:   { fontSize: 13, fontWeight: 600, color: '#0A1628', lineHeight: 1.3 },
   articleMeta:    { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-
-  // Note Sheet
   sheetOverlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'flex-end' },
   sheet:          { background: '#fff', borderRadius: '20px 20px 0 0', padding: '16px 18px 36px', width: '100%', fontFamily: 'DM Sans, sans-serif' },
   sheetHandle:    { width: 36, height: 4, background: '#E4E2DC', borderRadius: 2, margin: '0 auto 16px' },
@@ -457,8 +479,6 @@ const s = {
   charCount:      { fontSize: 11, color: '#9CA3AF', textAlign: 'right', marginTop: 4, marginBottom: 14 },
   sendBtn:        { width: '100%', background: '#0D9488', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' },
   skipBtn:        { width: '100%', background: 'none', border: 'none', color: '#9CA3AF', fontSize: 13, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', marginTop: 8, padding: '6px 0' },
-
-  // Upgrade overlay
   overlay:        { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 },
   overlayCard:    { background: '#fff', borderRadius: 20, padding: '28px 24px', maxWidth: 340, width: '100%', textAlign: 'center', fontFamily: 'DM Sans, sans-serif' },
   overlayIcon:    { fontSize: 36, marginBottom: 12 },

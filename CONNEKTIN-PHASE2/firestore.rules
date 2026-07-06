@@ -112,5 +112,15 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // Report feature (added 6 Jul 2026) — users can file a report on themselves
+    // only; only admins can view or update the reports list; nobody can delete.
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+        && request.resource.data.reporterUid == request.auth.uid;
+      allow read: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
   }
 }
