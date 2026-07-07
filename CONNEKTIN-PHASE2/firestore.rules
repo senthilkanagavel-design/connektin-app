@@ -148,5 +148,13 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // Payments — a user may read only their own order (to render
+    // /payment/status). Orders are written server-side by the Cloud
+    // Functions via the Admin SDK, which bypasses these rules, so no
+    // client create/update/delete is granted.
+    match /orders/{orderId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
   }
 }
