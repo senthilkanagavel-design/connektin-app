@@ -25,7 +25,6 @@ import Signup from "./pages/Signup";
 import IndustrySelect from "./pages/IndustrySelect";
 import PlanSelect from "./pages/PlanSelect";
 import Dashboard from "./pages/Dashboard";
-import Subscribe from "./pages/Subscribe";
 import PaymentStatus from "./pages/PaymentStatus";
 import Certificate from "./pages/Certificate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -67,7 +66,10 @@ export default function App() {
         <Route path="/role-select" element={<PrivateRoute><RoleSelect /></PrivateRoute>} />
         <Route path="/plan-select" element={<PrivateRoute><PlanSelect /></PrivateRoute>} />
         <Route path="/dashboard" element={<DashboardRoute><Dashboard /></DashboardRoute>} />
-        <Route path="/subscribe" element={<PrivateRoute><Subscribe /></PrivateRoute>} />
+        {/* /subscribe now renders the plans-master screen (PlanSelect). The old
+            hardcoded Subscribe.jsx (₹69, no plan-master reads) is retired. All
+            existing navigate("/subscribe") upgrade call sites resolve here. */}
+        <Route path="/subscribe" element={<PrivateRoute><PlanSelect /></PrivateRoute>} />
         <Route path="/payment/status" element={<PrivateRoute><PaymentStatus /></PrivateRoute>} />
         <Route path="/certificate" element={<PrivateRoute><Certificate /></PrivateRoute>} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
