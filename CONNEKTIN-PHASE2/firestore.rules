@@ -149,7 +149,16 @@ service cloud.firestore {
       }
     }
 
-    // Payments — a user may read only their own order (to render
+    // Plans master (subscription pricing). Public read so the Subscribe
+    // screen and the admin price-preview can fetch live prices; only an
+    // admin may edit. Charge amounts are re-resolved server-side in the
+    // Cloud Functions, so client reads here are display-only.
+    match /plans/{planId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // Payments -- a user may read only their own order (to render
     // /payment/status). Orders are written server-side by the Cloud
     // Functions via the Admin SDK, which bypasses these rules, so no
     // client create/update/delete is granted.
