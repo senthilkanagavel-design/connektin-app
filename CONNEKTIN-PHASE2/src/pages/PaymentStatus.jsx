@@ -4,17 +4,16 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 // ============================================================
-//  CONFIG — verify these 4 against your own code (see notes)
+//  CONFIG
 // ============================================================
-// 1) Import path above: `../firebase` must be where your app
-//    exports the initialised Firestore `db`. Adjust if needed.
-// 2) Routes your buttons navigate to:
+// 1) `db` is imported from ../firebase/config (the app's
+//    initialised Firestore export).
+// 2) Routes these buttons navigate to (all confirmed in App.jsx):
 const HOME_ROUTE = '/dashboard';
-const SUBSCRIBE_ROUTE = '/subscribe';
-const SUBSCRIPTION_ROUTE = '/me';
-// 3) Order status buckets. Confirm the exact strings your
-//    Cloud Functions write to orders/{id}.status.
-//    Anything not listed below is treated as "pending".
+const SUBSCRIBE_ROUTE = '/subscribe';       // renders PlanSelect (plans master)
+const SUBSCRIPTION_ROUTE = '/dashboard';    // was '/me' (no such route → landed on Splash)
+// 3) Order status buckets — the exact strings Cloud Functions
+//    write to orders/{id}.status. Anything unlisted = "pending".
 const SUCCESS_STATUSES = ['CHARGED'];
 const FAILED_STATUSES = [
   'AUTHENTICATION_FAILED',
@@ -24,12 +23,16 @@ const FAILED_STATUSES = [
   'VOIDED',
   'AUTO_REFUNDED',
 ];
-// 4) The query param HDFC / paymentReturn appends. Reads either
-//    ?order= or ?orderId=, so usually no change needed.
+// 4) Order-id query param — reads ?order=, ?orderId=, or ?order_id=
+//    so it matches whatever paymentReturn appends on redirect.
 // ============================================================
 
 const TEAL = '#0D9488';
-const PLAN_LABELS = { quarterly: 'Quarterly', monthly: 'Monthly', yearly: 'Yearly' };
+// Order docs store `interval` (monthly | quarterly | annual) and
+// `billingTier` (regular | thermite). The receipt Plan row is built
+// from those two — there is no `plan` field on the order.
+const PLAN_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
+const TIER_LABELS = { regular: 'Regular', thermite: 'Thermite' };
 
 const VARIANTS = {
   success: { icon: '✓', color: '#16A34A', bg: '#DCFCE7', title: 'Payment successful', badge: 'Active' },
@@ -53,7 +56,7 @@ function shortId(id) {
 export default function PaymentStatus() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const orderId = params.get('order') || params.get('orderId');
+  const orderId = params.get('order') || params.get('orderId') || params.get('order_id');
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +91,9 @@ export default function PaymentStatus() {
 
   const bucket = order ? bucketFor(order.status) : 'pending';
   const v = VARIANTS[bucket];
-  const planLabel = order ? (PLAN_LABELS[order.plan] || order.plan || '—') : '—';
+  const tierLabel = order ? (TIER_LABELS[order.billingTier] || order.billingTier || '') : '';
+  const intervalLabel = order ? (PLAN_LABELS[order.interval] || order.interval || '') : '';
+  const planLabel = [tierLabel, intervalLabel].filter(Boolean).join(' · ') || '—';
   const amountLabel = order && order.amount != null ? `₹${order.amount}` : '—';
 
   return (
