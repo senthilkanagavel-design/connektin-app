@@ -163,7 +163,7 @@ service cloud.firestore {
     // Functions via the Admin SDK, which bypasses these rules, so no
     // client create/update/delete is granted.
     match /orders/{orderId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
     }
   }
 }
