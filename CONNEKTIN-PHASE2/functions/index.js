@@ -31,6 +31,7 @@
  */
 
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
@@ -216,21 +217,21 @@ exports.createPaymentSession = onCall(
 
     const clientInterval = String((request.data && request.data.interval) || "").toLowerCase();
 
-    // Tier resolved SERVER-SIDE. Missing / anything but "thermite" = Regular.
+    // Tier resolved SERVER-SIDE. Missing / anything but "thermite"/"student" = Regular.
+    const LOCKED_TIERS = ["thermite", "student"];
     const userSnap = await db.doc(`users/${uid}`).get();
-    const billingTier =
-      userSnap.exists && userSnap.get("billingTier") === "thermite"
-        ? "thermite"
-        : "regular";
+    const storedTier = userSnap.exists ? userSnap.get("billingTier") : null;
+    const billingTier = LOCKED_TIERS.includes(storedTier) ? storedTier : "regular";
 
     // Interval resolution:
-    //  - Thermite → ALWAYS-LOCK: force the interval from users.billingInterval
-    //    and IGNORE whatever the client sent, so a locked user can't buy a
-    //    different interval by crafting the request. Reject if the lock is
-    //    missing/invalid (e.g. a legacy code that never set billingInterval).
+    //  - Thermite/Student → ALWAYS-LOCK: force the interval from
+    //    users.billingInterval and IGNORE whatever the client sent, so a
+    //    locked user can't buy a different interval by crafting the request.
+    //    Reject if the lock is missing/invalid (e.g. a legacy code that never
+    //    set billingInterval).
     //  - Regular → the client picks freely, but validate it's a real interval.
     let interval;
-    if (billingTier === "thermite") {
+    if (LOCKED_TIERS.includes(billingTier)) {
       interval = String(userSnap.get("billingInterval") || "").toLowerCase();
       if (!VALID_INTERVALS.includes(interval)) {
         throw new HttpsError(
@@ -363,3 +364,41 @@ exports.paymentWebhook = onRequest(
     res.status(200).send("ok");
   }
 );
+
+// ── onUserCollegeRoleChange (college student/lecturer rollup counters) ──
+// Keeps colleges/{collegeId}.studentCount / .lecturerCount in sync with the
+// users collection. Must be onDocumentWritten (not onCreate): Principal/
+// Lecturer get collegeId/collegeRole at doc-creation time (InvitePage's
+// setDoc), but students get it via updateDoc on an already-existing doc
+// (PlanSelect's college-code redemption) — a create-only trigger would miss
+// students. firestore.rules only allows non-admin writes to these two count
+// fields via this Admin-SDK trigger, so there is no client path that could
+// race or double-count it.
+exports.onUserCollegeRoleChange = onDocumentWritten("users/{uid}", async (event) => {
+  const before = event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data.after.exists ? event.data.after.data() : null;
+
+  const key = (d) =>
+    d && d.collegeId && (d.collegeRole === "student" || d.collegeRole === "lecturer")
+      ? `${d.collegeId}|${d.collegeRole}`
+      : null;
+
+  const beforeKey = key(before);
+  const afterKey = key(after);
+  if (beforeKey === afterKey) return; // no relevant change — avoid re-counting
+
+  if (beforeKey) {
+    const [collegeId, role] = beforeKey.split("|");
+    await db
+      .doc(`colleges/${collegeId}`)
+      .update({ [`${role}Count`]: FieldValue.increment(-1) })
+      .catch((e) => logger.error("rollup decrement failed", { collegeId, role, err: String(e) }));
+  }
+  if (afterKey) {
+    const [collegeId, role] = afterKey.split("|");
+    await db
+      .doc(`colleges/${collegeId}`)
+      .update({ [`${role}Count`]: FieldValue.increment(1) })
+      .catch((e) => logger.error("rollup increment failed", { collegeId, role, err: String(e) }));
+  }
+});

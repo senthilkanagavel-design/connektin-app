@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "in.connektin.app",
-        "sha256_cert_fingerprints": ["92:73:1A:C8:D4:49:DA:93:E7:89:6F:4E:D0:5C:9C:81:FA:39:DE:01:4A:BE:CB:8E:FD:72:1D:AD:10:3B:BA:12"]
+        "package_name": "app.connektin.android",
+        "sha256_cert_fingerprints": ["E1:AB:E1:EA:76:DF:6C:2D:45:65:95:8C:FF:BE:F1:59:FC:9F:A6:1E:CA:80:FD:03:F6:01:45:C7:D6:C2:41:78"]
       }
     }]

@@ -2,3 +2,20 @@ npm run build:live
 npm run deploy:live
 
 superadmin@connektin.in - Conn@1234! - Juliet
+
+https://play.google.com/apps/testing/app.connektin.android
+
+
+s
+
+https://play.google.com/store/apps/details?id=app.connektin.android
+
+
+test@test.com
+test@1234
+usertest@test.com
+test@1234
+usertest1@test.com
+test@1234
+usertest2@test.com
+test@1234

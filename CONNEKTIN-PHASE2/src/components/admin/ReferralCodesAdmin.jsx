@@ -24,14 +24,19 @@ function generateCode() {
 
 export default function ReferralCodesAdmin() {
   const [codes, setCodes]                   = useState([]);
-  const [planPrices, setPlanPrices]         = useState({}); // { monthly, quarterly, annual } from plans master
+  const [planPrices, setPlanPrices]         = useState({}); // { thermite: {monthly,...}, student: {annual,...} }
+  const [colleges, setColleges]             = useState([]);
   const [showForm, setShowForm]             = useState(false);
+  const [collegeId, setCollegeId]           = useState(""); // "" = general-public Thermite code
   const [billingInterval, setBillingInterval] = useState("monthly");
   const [expiryDays, setExpiryDays]         = useState("30");
   const [notes, setNotes]                   = useState("");
   const [environment, setEnvironment]       = useState("live");
   const [saving, setSaving]                 = useState(false);
   const [newCode, setNewCode]               = useState("");
+
+  const isCollegeCode = !!collegeId;
+  const tier = isCollegeCode ? "student" : "thermite";
 
   // Referral codes list
   useEffect(() => {
@@ -45,20 +50,37 @@ export default function ReferralCodesAdmin() {
     return () => unsub();
   }, []);
 
-  // Live Thermite prices from the plan master (display-only preview)
+  // Colleges list, for the "which college is this code for" picker
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "colleges"), snap => {
+      setColleges(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  // Live prices from the plan master (display-only preview), keyed by tier
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "plans"), snap => {
       const map = {};
       snap.docs.forEach(d => {
         const p = d.data();
-        if (p.tier === "thermite" && p.interval) map[p.interval] = String(p.amount);
+        if (!p.tier || !p.interval) return;
+        if (!map[p.tier]) map[p.tier] = {};
+        map[p.tier][p.interval] = String(p.amount);
       });
       setPlanPrices(map);
     });
     return () => unsub();
   }, []);
 
-  const priceFor = (iv) => planPrices[iv] ?? THERMITE_FALLBACK[iv] ?? null;
+  // College (Student) codes are annual-only — that's the only seeded plan
+  // (plans/student_annual). Force the interval the moment a college is picked.
+  function selectCollege(id) {
+    setCollegeId(id);
+    if (id) setBillingInterval("annual");
+  }
+
+  const priceFor = (iv) => planPrices[tier]?.[iv] ?? (tier === "thermite" ? THERMITE_FALLBACK[iv] : null) ?? null;
   const intervalLabel = (iv) => INTERVALS.find(x => x.value === iv)?.label || iv;
   const previewPrice = priceFor(billingInterval);
 
@@ -71,9 +93,10 @@ export default function ReferralCodesAdmin() {
     try {
       await setDoc(doc(db, "referralCodes", code), {
         code,
-        tier: "thermite",
+        tier,
         interval: billingInterval,          // "monthly" | "quarterly" | "annual"
-        label: "Thermite",
+        label: isCollegeCode ? "Student" : "Thermite",
+        ...(isCollegeCode ? { collegeId } : {}),
         active: true,
         environment,
         notes: notes.trim() || "",
@@ -83,6 +106,7 @@ export default function ReferralCodesAdmin() {
       setNewCode(code);
       setShowForm(false);
       setBillingInterval("monthly");
+      setCollegeId("");
       setNotes("");
       setEnvironment("live");
     } catch (e) { console.error(e); }
@@ -98,7 +122,7 @@ export default function ReferralCodesAdmin() {
       <div style={S.header}>
         <div>
           <div style={S.title}>Referral Codes</div>
-          <div style={S.sub}>Generate and manage codes for the Thermite plan</div>
+          <div style={S.sub}>Generate and manage codes for Thermite or a specific college's Student plan</div>
         </div>
         <button style={S.createBtn} onClick={() => { setShowForm(true); setNewCode(""); }}>
           + Generate Code
@@ -119,17 +143,31 @@ export default function ReferralCodesAdmin() {
         <div style={S.form}>
           <div style={S.formTitle}>New referral code</div>
 
-          {/* Interval — mandatory segmented control */}
+          {/* College — optional. Picking one switches this to a Student code,
+              locked to annual (the only interval currently seeded for it). */}
+          <div style={{ ...S.formBlock, marginBottom: 14 }}>
+            <label style={S.lbl}>For a college (optional)</label>
+            <select style={S.input} value={collegeId} onChange={e => selectCollege(e.target.value)}>
+              <option value="">— General public (Thermite) —</option>
+              {colleges.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Interval — mandatory segmented control; locked to Annual for college codes */}
           <div style={S.formBlock}>
             <label style={S.lbl}>Billing interval</label>
             <div style={S.segment}>
               {INTERVALS.map(iv => {
                 const on = billingInterval === iv.value;
+                const locked = isCollegeCode && iv.value !== "annual";
                 return (
                   <button
                     key={iv.value}
-                    onClick={() => setBillingInterval(iv.value)}
-                    style={{ ...S.segBtn, ...(on ? S.segBtnOn : {}) }}
+                    onClick={() => !locked && setBillingInterval(iv.value)}
+                    disabled={locked}
+                    style={{ ...S.segBtn, ...(on ? S.segBtnOn : {}), ...(locked ? { opacity: 0.35, cursor: "not-allowed" } : {}) }}
                   >
                     {iv.label}
                   </button>
@@ -149,7 +187,7 @@ export default function ReferralCodesAdmin() {
             </div>
             <div style={S.previewBox}>
               <div style={S.previewLbl}>PLAN</div>
-              <div style={S.planChip}>Thermite</div>
+              <div style={S.planChip}>{isCollegeCode ? "Student" : "Thermite"}</div>
             </div>
           </div>
 
@@ -203,6 +241,8 @@ export default function ReferralCodesAdmin() {
 
         {codes.map(c => {
           const legacy = !c.interval; // pre-always-lock codes had `price`, no interval
+          const rowTier = c.tier || "thermite";
+          const rowPrice = planPrices[rowTier]?.[c.interval] ?? (rowTier === "thermite" ? THERMITE_FALLBACK[c.interval] : null);
           return (
             <div key={c.id} style={S.tableRow}>
               <span style={{ ...S.codeCell, flex: 1.4 }}>{c.code}</span>
@@ -211,7 +251,8 @@ export default function ReferralCodesAdmin() {
                   <span style={S.legacyBadge} title="Created before the interval model — regenerate this code">⚠ Legacy</span>
                 ) : (
                   <span>
-                    <span style={{ color: "#0D9488", fontWeight: 700 }}>₹{priceFor(c.interval) ?? "—"}</span>
+                    {c.collegeId && <span style={{ color: "#7C3AED", fontWeight: 700, marginRight: 6 }}>🎓</span>}
+                    <span style={{ color: "#0D9488", fontWeight: 700 }}>₹{rowPrice ?? "—"}</span>
                     <span style={{ color: "#888", marginLeft: 6 }}>{intervalLabel(c.interval)}</span>
                   </span>
                 )}

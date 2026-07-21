@@ -44,7 +44,9 @@ async function validateReferralCode(code) {
     if (!data.active) return { valid: false, error: "This code is no longer active." };
     if (data.expiresAt && data.expiresAt.toDate() < new Date()) return { valid: false, error: "This code has expired." };
     if (!data.interval) return { valid: false, error: "This code is outdated. Please ask for a new one." };
-    return { valid: true, interval: data.interval, label: data.label || "Thermite" };
+    // College codes carry a collegeId — they redeem into the "student" tier
+    // instead of "thermite" (see handleValidateCode below).
+    return { valid: true, interval: data.interval, label: data.label || "Thermite", collegeId: data.collegeId || null };
   } catch (e) {
     return { valid: false, error: "Could not validate code. Try again." };
   }
@@ -55,7 +57,8 @@ export default function PlanSelect() {
   const navigate = useNavigate();
 
   const [step, setStep]                 = useState("ask");     // ask | enter | plan
-  const [tier, setTier]                 = useState("regular"); // regular | thermite
+  const [tier, setTier]                 = useState("regular"); // regular | thermite | student
+  const [tierLabel, setTierLabel]       = useState("Thermite"); // display label for a locked/referral tier
   const [lockedInterval, setLocked]     = useState(null);
   const [appliedCode, setAppliedCode]   = useState(null);
   const [selected, setSelected]         = useState("monthly");
@@ -101,11 +104,15 @@ export default function PlanSelect() {
 
     // Commit tier + locked interval BEFORE showing pricing. createPaymentSession
     // resolves tier server-side and FORCES the interval from billingInterval for
-    // Thermite, so both must be persisted here.
+    // Thermite/Student, so both must be persisted here. A college code (has
+    // collegeId) redeems into "student" instead of "thermite", and also stamps
+    // collegeId/collegeRole so the account is scoped to that college.
+    const isCollegeCode = !!result.collegeId;
     try {
       await updateDoc(doc(db, "users", user.uid), {
-        billingTier: "thermite",
+        billingTier: isCollegeCode ? "student" : "thermite",
         billingInterval: result.interval,
+        ...(isCollegeCode ? { collegeId: result.collegeId, collegeRole: "student" } : {}),
       });
       await fetchProfile(user.uid);
     } catch (e) {
@@ -115,7 +122,8 @@ export default function PlanSelect() {
     }
 
     setValidating(false);
-    setTier("thermite");
+    setTier(isCollegeCode ? "student" : "thermite");
+    setTierLabel(result.label || (isCollegeCode ? "Student" : "Thermite"));
     setLocked(result.interval);
     setSelected(result.interval);
     setAppliedCode(codeInput.trim().toUpperCase());
@@ -137,7 +145,7 @@ export default function PlanSelect() {
   }
 
   function pick(iv) {
-    if (tier === "thermite" && iv !== lockedInterval) return; // frozen
+    if (tier !== "regular" && iv !== lockedInterval) return; // frozen (thermite or student)
     setSelected(iv);
   }
 
@@ -213,7 +221,7 @@ export default function PlanSelect() {
   }
 
   // ── Step: plan ────────────────────────────────────────────────
-  const isTherm   = tier === "thermite";
+  const isLocked  = tier !== "regular"; // any referral-code-redeemed tier (thermite, student, ...)
   const tierMap   = plans && plans[tier];
   const cur       = tierMap ? tierMap[selected] : null;
   const monthly   = tierMap ? tierMap.monthly : null;
@@ -222,8 +230,8 @@ export default function PlanSelect() {
   return (
     <div style={s.page}>
       {Logo}
-      <h1 style={s.heading}>{isTherm ? "Thermite Plan" : "Choose your plan"}</h1>
-      <p style={s.sub}>{isTherm ? "Special pricing unlocked with your referral code" : "Full access. Cancel anytime."}</p>
+      <h1 style={s.heading}>{isLocked ? `${tierLabel} Plan` : "Choose your plan"}</h1>
+      <p style={s.sub}>{isLocked ? "Special pricing unlocked with your referral code" : "Full access. Cancel anytime."}</p>
 
       <div style={{ ...s.card, maxWidth: 400, gap: 0 }}>
         {!plans && !plansError && <Loader />}
@@ -231,11 +239,11 @@ export default function PlanSelect() {
 
         {plans && !plansError && (
           <>
-            <div style={{ ...s.tierBadge, color: isTherm ? "#0D9488" : "#38bdf8" }}>
-              {isTherm ? "✦ THERMITE — REFERRAL PRICING" : "REGULAR PLAN"}
+            <div style={{ ...s.tierBadge, color: isLocked ? "#0D9488" : "#38bdf8" }}>
+              {isLocked ? `✦ ${tierLabel.toUpperCase()} — REFERRAL PRICING` : "REGULAR PLAN"}
             </div>
 
-            {isTherm && appliedCode && (
+            {isLocked && appliedCode && (
               <div style={s.appliedRow}>
                 Code applied <span style={s.chip}>{appliedCode}</span> · locked to {IV_LABEL[lockedInterval]}
               </div>
@@ -245,7 +253,7 @@ export default function PlanSelect() {
             <div style={s.segment}>
               {INTERVALS.map(iv => {
                 const on = iv === selected;
-                const locked = isTherm && iv !== lockedInterval;
+                const locked = isLocked && iv !== lockedInterval;
                 const badge = tierMap[iv]?.badge;
                 return (
                   <button
@@ -264,7 +272,7 @@ export default function PlanSelect() {
 
             {/* Price */}
             <div style={s.priceRow}>
-              <span style={{ ...s.priceNum, color: isTherm ? "#4ade80" : "#38bdf8" }}>
+              <span style={{ ...s.priceNum, color: isLocked ? "#4ade80" : "#38bdf8" }}>
                 {cur ? `₹${cur.amount}` : "—"}
               </span>
               <span style={s.pricePeriod}>{IV_PERIOD[selected]}</span>
@@ -290,7 +298,7 @@ export default function PlanSelect() {
               {submitting ? "Starting checkout…" : `Subscribe Now — ₹${cur ? cur.amount : ""}${IV_PERIOD[selected]} →`}
             </button>
 
-            {isTherm ? (
+            {isLocked ? (
               <p style={s.lockNote}>Your code is fixed to {IV_LABEL[lockedInterval]}. To pick a different interval, ask for a different code.</p>
             ) : (
               <button style={s.linkBtn} onClick={() => setStep("enter")}>Have a referral code?</button>

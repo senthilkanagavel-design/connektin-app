@@ -89,7 +89,7 @@ function InvalidStep() {
   );
 }
 
-function SetPasswordStep({ company, onActivate, loading, error }) {
+function SetPasswordStep({ company, kind, onActivate, loading, error }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
   const [localErr, setLocalErr] = useState('');
@@ -125,7 +125,9 @@ function SetPasswordStep({ company, onActivate, loading, error }) {
         Welcome aboard!
       </div>
       <div style={{ fontSize: 13, color: '#444441', lineHeight: 1.6, marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>
-        You've been invited to join ConnektIn. Set a password to activate your company account.
+        You've been invited to join ConnektIn. Set a password to activate your {
+          kind === 'principal' ? 'Principal' : kind === 'lecturer' ? 'Lecturer' : 'company'
+        } account.
       </div>
 
       {(error || localErr) && (
@@ -164,12 +166,22 @@ function SetPasswordStep({ company, onActivate, loading, error }) {
   );
 }
 
-function SuccessStep({ company, onContinue }) {
-  const FEATURES = [
+function SuccessStep({ company, kind, onContinue }) {
+  const COMPANY_FEATURES = [
     { bg: '#EEEDFE', icon: '💼', title: 'Post jobs & internships', sub: 'Reach thousands of seekers on ConnektIn' },
     { bg: '#E1F5EE', icon: '👥', title: 'Review applicants',        sub: 'Shortlist and connect with talent' },
     { bg: '#FAEEDA', icon: '🏢', title: 'Build your company profile', sub: 'Showcase your brand to seekers' },
   ];
+  const PRINCIPAL_FEATURES = [
+    { bg: '#EEEDFE', icon: '🎓', title: 'See your whole college', sub: 'Enrollment and engagement at a glance' },
+    { bg: '#E1F5EE', icon: '👨‍🏫', title: 'Invite Lecturers',      sub: 'Bring your teaching staff onto ConnektIn' },
+    { bg: '#FAEEDA', icon: '📈', title: 'Track student adoption', sub: 'Watch enrollment grow as students join' },
+  ];
+  const LECTURER_FEATURES = [
+    { bg: '#EEEDFE', icon: '👩‍🎓', title: 'View your students',    sub: 'See who from your college has joined' },
+    { bg: '#E1F5EE', icon: '📊', title: 'Track engagement',       sub: 'Spot who needs a nudge to get started' },
+  ];
+  const FEATURES = kind === 'principal' ? PRINCIPAL_FEATURES : kind === 'lecturer' ? LECTURER_FEATURES : COMPANY_FEATURES;
   return (
     <>
       <div style={{ textAlign: 'center', padding: '8px 0 22px' }}>
@@ -184,7 +196,8 @@ function SuccessStep({ company, onContinue }) {
           Account activated!
         </div>
         <div style={{ fontSize: 13, color: '#444441', lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
-          Welcome to ConnektIn, <strong style={{ color: '#0A1628' }}>{company.name}</strong>. Your company dashboard is ready.
+          Welcome to ConnektIn, <strong style={{ color: '#0A1628' }}>{company.name}</strong>.{' '}
+          {kind === 'principal' || kind === 'lecturer' ? 'Your dashboard is ready.' : 'Your company dashboard is ready.'}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
@@ -218,6 +231,10 @@ export default function InvitePage() {
   const [step, setStep]             = useState('verifying');
   const [company, setCompany]       = useState(null);
   const [companyDocId, setCompanyDocId] = useState(null);
+  // College invites carry collegeId/collegeRole instead of companyId — same
+  // invite doc shape, different destination fields (see CollegesAdminTab).
+  const [collegeId, setCollegeId]     = useState(null);
+  const [collegeRole, setCollegeRole] = useState(null);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
 
@@ -229,7 +246,9 @@ export default function InvitePage() {
         const inv = snap.data();
         if (inv.status === 'used') { navigate('/login'); return; }
         setCompany({ name: inv.name, email: inv.email, logoURL: inv.logoURL || null });
-        setCompanyDocId(inv.companyId);
+        setCompanyDocId(inv.companyId || null);
+        setCollegeId(inv.collegeId || null);
+        setCollegeRole(inv.collegeRole || null);
         setStep('set-password');
       } catch (err) {
         console.error(err);
@@ -247,20 +266,43 @@ export default function InvitePage() {
       const userCred = await createUserWithEmailAndPassword(auth, company.email, password);
       const uid = userCred.user.uid;
       await updateProfile(userCred.user, { displayName: company.name });
-      await setDoc(doc(db, 'users', uid), {
-        uid,
-        displayName: company.name,
-        email:       company.email,
-        userType:    'company',
-        companyId:   companyDocId,
-        plan:        'company',
-        createdAt:   serverTimestamp(),
-      });
-      await updateDoc(doc(db, 'companies', companyDocId), {
-        status:      'active',
-        authUid:     uid,
-        activatedAt: serverTimestamp(),
-      });
+
+      if (collegeId) {
+        await setDoc(doc(db, 'users', uid), {
+          uid,
+          displayName: company.name,
+          email:       company.email,
+          collegeId,
+          collegeRole, // 'principal' | 'lecturer'
+          createdAt:   serverTimestamp(),
+        });
+        // Only the first (Principal) invite activates the college itself —
+        // a Lecturer invite just creates their user doc; the college is
+        // already active by then.
+        if (collegeRole === 'principal') {
+          await updateDoc(doc(db, 'colleges', collegeId), {
+            status:      'active',
+            principalUid: uid,
+            activatedAt: serverTimestamp(),
+          });
+        }
+      } else {
+        await setDoc(doc(db, 'users', uid), {
+          uid,
+          displayName: company.name,
+          email:       company.email,
+          userType:    'company',
+          companyId:   companyDocId,
+          plan:        'company',
+          createdAt:   serverTimestamp(),
+        });
+        await updateDoc(doc(db, 'companies', companyDocId), {
+          status:      'active',
+          authUid:     uid,
+          activatedAt: serverTimestamp(),
+        });
+      }
+
       try {
         await updateDoc(doc(db, 'invites', token), { status: 'used' });
       } catch (e) {
@@ -296,10 +338,14 @@ export default function InvitePage() {
         {step === 'verifying'    && <VerifyingStep />}
         {step === 'invalid'      && <InvalidStep />}
         {step === 'set-password' && company && (
-          <SetPasswordStep company={company} onActivate={handleActivate} loading={loading} error={error} />
+          <SetPasswordStep company={company} kind={collegeRole || 'company'} onActivate={handleActivate} loading={loading} error={error} />
         )}
         {step === 'success' && company && (
-          <SuccessStep company={company} onContinue={() => navigate('/company/dashboard')} />
+          <SuccessStep
+            company={company}
+            kind={collegeRole || 'company'}
+            onContinue={() => navigate(collegeId ? '/dashboard' : '/company/dashboard')}
+          />
         )}
       </div>
     </div>

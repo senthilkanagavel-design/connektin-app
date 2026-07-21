@@ -18,7 +18,7 @@ export default function Login() {
     } catch (err) {
       setLoading(false);
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
-      setGoogleError("Google sign-in failed. Please try again.");
+      setGoogleError(`Google sign-in failed: ${err.code || "unknown"} — ${err.message || ""}`);
     }
   }
 

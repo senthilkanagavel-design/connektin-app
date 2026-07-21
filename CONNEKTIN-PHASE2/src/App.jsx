@@ -29,6 +29,9 @@ import PaymentStatus from "./pages/PaymentStatus";
 import Certificate from "./pages/Certificate";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
+import InvitePage from "./pages/InvitePage";
+import PrincipalDashboard from "./pages/PrincipalDashboard";
+import LecturerDashboard from "./pages/LecturerDashboard";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -41,6 +44,14 @@ function DashboardRoute({ children }) {
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (!profile) return <div className="loading-screen">Loading...</div>;
+  // College staff (Principal/Lecturer) are admin-provisioned via invite, not
+  // the consumer signup wizard — they never get the seeker-style profile
+  // fields (industry, plan, etc.) the consumer Dashboard/tabs assume, so
+  // route them to their own dashboards instead of `children` (Dashboard).
+  // Students keep the normal funnel below; their collegeRole is only
+  // stamped later, during PlanSelect's code redemption.
+  if (profile.collegeRole === "principal") return <PrincipalDashboard />;
+  if (profile.collegeRole === "lecturer") return <LecturerDashboard />;
   if (!profile.onboardingDone) return <Navigate to="/onboarding" replace />;
   if (!profile.onboardingComplete) return <Navigate to="/industry-select" replace />;
   if (!profile.userType) return <Navigate to="/role-select" replace />;
@@ -87,6 +98,12 @@ export default function App() {
         <Route path="/weekly-game" element={<PrivateRoute><WeeklyGamePage /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
         <Route path="/company/:companyId" element={<PrivateRoute><CompanyDetailPage /></PrivateRoute>} />
+        {/* Invite activation (company OR college principal/lecturer) — no
+            PrivateRoute/PublicRoute wrapper: the recipient isn't logged in
+            yet, and InvitePage handles its own auth-user creation. Fixes a
+            pre-existing gap — Admin already generated /invite/:token links
+            that 404'd here before this route existed. */}
+        <Route path="/invite/:token" element={<InvitePage />} />
         <Route path="/login/email"  element={<PublicRoute><EmailLogin /></PublicRoute>} />
         <Route path="/signup/email" element={<PublicRoute><EmailSignup /></PublicRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -10,6 +10,7 @@ import { db, storage } from "../firebase/config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../context/AuthContext";
 import ReferralCodesAdmin from "../components/admin/ReferralCodesAdmin";
+import CollegesAdminTab from "../components/admin/CollegesAdminTab";
 
 const T = {
   navy:"#0A1628",navyLight:"#0F2040",teal:"#0D9488",tealLight:"#CCFBF1",
@@ -1477,6 +1478,7 @@ const NAV = [
   { id: "challenges", label: "Challenges",     icon: Icon.game      },
   { id: "broadcast",  label: "Broadcast",      icon: "📣"           },
   { id: "companies",  label: "Companies",      icon: "🏢"           },
+  { id: "colleges",   label: "Colleges",       icon: "🎓"           },
   { id: "referrals",  label: "Referral Codes", icon: Icon.referral  },
 ];
 
@@ -1510,6 +1512,7 @@ export default function Admin() {
     referrals:  <ReferralCodesAdmin />,
     broadcast:  <BroadcastTab />,
     companies:  <CompaniesAdminTab />,
+    colleges:   <CollegesAdminTab />,
   };
 
   return (
